@@ -1,5 +1,6 @@
 " File:          snipMate.vim
 " Author:        Michael Sanders
+" Last Updated:  July 13, 2009
 " Version:       0.83
 " Description:   snipMate.vim implements some of TextMate's snippets features in
 "                Vim. A snippet is a piece of often-typed text that you can
