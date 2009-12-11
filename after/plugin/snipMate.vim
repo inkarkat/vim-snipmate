@@ -5,6 +5,7 @@ if !exists('loaded_snips') || exists('s:did_snips_mappings')
 endif
 let s:did_snips_mappings = 1
 
+let g:snipMate_triggerKey = "\<C-]>"
 ino  <silent> <C-]> <c-r>=TriggerSnippet()<cr>
 snor <silent> <C-]> <esc>i<right><c-r>=TriggerSnippet()<cr>
 ino  <silent> <C-\> <c-r>=BackwardsSnippet()<cr>
