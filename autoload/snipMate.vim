@@ -196,7 +196,7 @@ fun snipMate#jumpTabStop(backwards)
 	if s:curPos == s:snipLen
 		let sMode = s:endCol == g:snipPos[s:curPos-1][1]+g:snipPos[s:curPos-1][2]
 		call s:RemoveSnippet()
-		return sMode ? "\<tab>" : TriggerSnippet()
+		return sMode ? g:snipMate_triggerKey : TriggerSnippet()
 	endif
 
 	call cursor(g:snipPos[s:curPos][0], g:snipPos[s:curPos][1])
