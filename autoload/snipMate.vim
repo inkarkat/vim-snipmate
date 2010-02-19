@@ -14,6 +14,30 @@ fun s:RemoveSnippet()
 	aug! snipMateAutocmds
 endf
 
+fun s:Indent(line)
+	return matchend(a:line, '^.\{-}\ze\(\S\|$\)') + 1
+endfun
+fun s:CorrectWrongIndent(indentstr)
+	" Spaces before Tabs may not contribute to indent, so remove them. 
+	let old = a:indentstr
+	while 1
+		let indentstr = substitute(old, printf("\%(^\|\t\+\)\%( \{%d}\)\?\zs \{1,%d}\t", &sts, &ts - 1), "\t", 'g')
+		if indentstr ==# old  | return old | endif
+		let old = indentstr
+	endwhile
+endfun
+fun s:ReIndent(lnum)
+	let line = getline(a:lnum)
+	let nonIndentCol = s:Indent(line) - 1
+	let indentStr = strpart(line, 0, nonIndentCol)
+	let nonIndentStr = strpart(line, nonIndentCol)
+	let indentStr = s:CorrectWrongIndent(indentStr)
+	let indent = strlen(substitute(indentStr, "\t", repeat(' ', &ts), 'g'))
+
+	let stsIndentStr = repeat("\t", indent / &ts) . repeat(' ', indent % &ts)
+	call setline(a:lnum, stsIndentStr . nonIndentStr)
+	return indent
+endfun
 fun snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
 
@@ -24,6 +48,7 @@ fun snipMate#expandSnip(snip, col)
 	" Expand snippet onto current position with the tab stops removed
 	let snipLines = split(substitute(snippet, '$\d\+\|${\d\+.\{-}}', '', 'g'), "\n", 1)
 
+	let endlnum = lnum + len(snipLines) - 1
 	let line = getline(lnum)
 	let afterCursor = strpart(line, col - 1)
 	" Keep text after the cursor
@@ -41,11 +66,18 @@ fun snipMate#expandSnip(snip, col)
 	call setline(lnum, line.snipLines[0])
 
 	" Autoindent snippet according to previous indentation
-	let indent = matchend(line, '^.\{-}\ze\(\S\|$\)') + 1
+	let indent = s:Indent(line)
 	call append(lnum, map(snipLines[1:], "'".strpart(line, 0, indent - 1)."'.v:val"))
 
+	" Correct the indent to tabs followed by optional spaces if 'softtabstop'
+	if &sts && ! &et
+		let indents = map(range(lnum, endlnum), 's:ReIndent(v:val)')
+	else
+		let indents = repeat(indent, len(snipLines))
+	endif
+
 	" Open any folds snippet expands into
-	if &fen | sil! exe lnum.','.(lnum + len(snipLines) - 1).'foldopen' | endif
+	if &fen | sil! exe lnum.','.endlnum.'foldopen' | endif
 
 	let [g:snipPos, s:snipLen] = s:BuildTabStops(snippet, lnum, col - indent, indent)
 
@@ -104,7 +136,9 @@ fun s:ProcessSnippet(snip)
 	endw
 
 	if &et " Expand tabs to spaces if 'expandtab' is set.
-		return substitute(snippet, '\t', repeat(' ', &sts ? &sts : &sw), 'g')
+		return substitute(snippet, '\t', repeat(' ', &sts ? &sts : &ts), 'g')
+	elseif &sts " Preliminarily render indent as spaces if 'softtabstop' is set.
+		return substitute(snippet, '\%(^\|\n\zs\)\t\+', '\=repeat(" ", &sts * strlen(submatch(0)))', 'g')
 	endif
 	return snippet
 endf
