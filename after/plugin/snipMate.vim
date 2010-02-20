@@ -5,11 +5,19 @@ if !exists('loaded_snips') || exists('s:did_snips_mappings')
 endif
 let s:did_snips_mappings = 1
 
+function! TriggerFilter( expr )
+	return (a:expr ==# "\<C-]>" ? '' : a:expr)
+endfunction
+function! TriggerSnippedAfterExpand()
+	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c') 
+	return (l:lastInsertedChar ==# "\<C-]>" ? "\<BS>\<C-r>=TriggerFilter(TriggerSnippet())\<CR>" : '')
+endfunction
+
 let g:snipMate_triggerKey = "\<C-]>"
-ino  <silent> <C-]> <c-r>=TriggerSnippet()<cr>
-snor <silent> <C-]> <esc>i<right><c-r>=TriggerSnippet()<cr>
-ino  <silent> <C-\> <c-r>=BackwardsSnippet()<cr>
-snor <silent> <C-\> <esc>i<right><c-r>=BackwardsSnippet()<cr>
+imap <silent> <C-]> <C-]><c-r>=TriggerSnippedAfterExpand()<cr>
+snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
+ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
+snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
 ino  <silent> <C-r><C-]> <c-r>=ShowAvailableSnips()<cr>
 
 " The default mappings for these are annoying & sometimes break snipMate.
