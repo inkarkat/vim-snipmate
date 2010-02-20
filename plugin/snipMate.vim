@@ -136,7 +136,7 @@ fun! TriggerSnippet()
 			call feedkeys(SuperTabKey) | return ''
 		endif
 		call feedkeys("\<esc>a", 'n') " Close completion menu
-		call feedkeys("\<tab>") | return ''
+		call feedkeys(g:snipMate_triggerKey) | return ''
 	endif
 
 	if exists('g:snipPos') | return snipMate#jumpTabStop(0) | endif
@@ -157,7 +157,7 @@ fun! TriggerSnippet()
 		call feedkeys(SuperTabKey)
 		return ''
 	endif
-	return "\<tab>"
+	return g:snipMate_triggerKey
 endf
 
 fun! BackwardsSnippet()
@@ -174,7 +174,7 @@ fun! BackwardsSnippet()
 		call feedkeys(SuperTabKey)
 		return ''
 	endif
-	return "\<s-tab>"
+	return g:snipMate_triggerKey
 endf
 
 " Check if word under cursor is snippet trigger; if it isn't, try checking if
