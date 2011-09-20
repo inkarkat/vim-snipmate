@@ -17,14 +17,16 @@ endf
 fun s:Indent(line)
 	return matchend(a:line, '^.\{-}\ze\(\S\|$\)') + 1
 endfun
-fun s:CorrectWrongIndent(indentstr)
+fun s:CorrectWrongIndent(indentStr)
+	let l:indentStr = a:indentStr
+
 	" Spaces before Tabs may not contribute to indent, so remove them. 
-	let old = a:indentstr
-	while 1
-		let indentstr = substitute(old, printf("\%(^\|\t\+\)\%( \{%d}\)\?\zs \{1,%d}\t", &sts, &ts - 1), "\t", 'g')
-		if indentstr ==# old  | return old | endif
-		let old = indentstr
+	let i = 1
+	while indentStr =~# '\%>' . (i * 8) . 'v.'
+		let indentStr = substitute(indentStr, printf("\\%%%dv \\{1,%d}\\t", i * 8 + 1, &ts - 1), "\t", 'g')
+		let i += 1
 	endwhile
+	return indentStr
 endfun
 fun s:ReIndent(lnum)
 	let line = getline(a:lnum)
@@ -36,7 +38,7 @@ fun s:ReIndent(lnum)
 
 	let stsIndentStr = repeat("\t", indent / &ts) . repeat(' ', indent % &ts)
 	call setline(a:lnum, stsIndentStr . nonIndentStr)
-	return indent
+	return strlen(stsIndentStr)
 endfun
 fun snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
@@ -70,8 +72,29 @@ fun snipMate#expandSnip(snip, col)
 	call append(lnum, map(snipLines[1:], "'".strpart(line, 0, indent - 1)."'.v:val"))
 
 	" Correct the indent to tabs followed by optional spaces if 'softtabstop'
+	" This merges the existing indent with the snippet's indent (which was
+	" preliminarily converted to spaces), and ensures that the result again is a
+	" proper 'softtabstop' indent of tabs followed by optional spaces. 
 	if &sts && ! &et
-		let indents = map(range(lnum, endlnum), 's:ReIndent(v:val)')
+		let l:cursorCol = col('.')
+
+		let lineIndentCols = map(range(lnum, endlnum), 's:ReIndent(v:val)')
+		let snipIndentCols = map(snipLines, 's:Indent(v:val) - 1')
+		" The re-indenting may have changed the number of bytes allocated for
+		" the indent, and this change may be different for every snippet line.
+		let indents = []
+		for i in range(len(snipLines))
+			call add(indents, lineIndentCols[i] - snipIndentCols[i] + 1)
+		endfor
+
+		" Adapt if the amount of indent was changed by the merging of the
+		" existing indent with the snippet's indent (or by superfluous spaces in
+		" the existing indent).
+		let lineIndentDelta = indents[0] - indent
+		if lineIndentDelta != 0
+			call cursor(line('.'), l:cursorCol + lineIndentDelta)
+			let col = col + lineIndentDelta
+		endif
 	else
 		let indents = repeat(indent, len(snipLines))
 	endif
@@ -79,7 +102,7 @@ fun snipMate#expandSnip(snip, col)
 	" Open any folds snippet expands into
 	if &fen | sil! exe lnum.','.endlnum.'foldopen' | endif
 
-	let [g:snipPos, s:snipLen] = s:BuildTabStops(snippet, lnum, col - indent, indent)
+	let [g:snipPos, s:snipLen] = s:BuildTabStops(snippet, lnum, col, indents)
 
 	if s:snipLen
 		aug snipMateAutocmds
@@ -165,7 +188,7 @@ endf
 "     the matches of "$#", to be replaced with the placeholder. This list is
 "     composed the same way as the parent; the first item is the line number,
 "     and the second is the column.
-fun s:BuildTabStops(snip, lnum, col, indent)
+fun s:BuildTabStops(snip, lnum, col, indents)
 	let snipPos = []
 	let i = 1
 	let withoutVars = substitute(a:snip, '$\d\+', '', 'g')
@@ -175,9 +198,10 @@ fun s:BuildTabStops(snip, lnum, col, indent)
 
 		let j = i - 1
 		call add(snipPos, [0, 0, -1])
-		let snipPos[j][0] = a:lnum + s:Count(beforeTabStop, "\n")
-		let snipPos[j][1] = a:indent + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze${'.i.'\D'))
-		if snipPos[j][0] == a:lnum | let snipPos[j][1] += a:col | endif
+		let tabStopLnum = s:Count(beforeTabStop, "\n")
+		let snipPos[j][0] = a:lnum + tabStopLnum
+		let snipPos[j][1] = a:indents[tabStopLnum] + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze${'.i.'\D'))
+		if snipPos[j][0] == a:lnum | let snipPos[j][1] += a:col - a:indents[0] | endif
 
 		" Get all $# matches in another list, if ${#:name} is given
 		if stridx(withoutVars, '${'.i.':') != -1
@@ -188,10 +212,11 @@ fun s:BuildTabStops(snip, lnum, col, indent)
 			while match(withoutOthers, '$'.i.'\(\D\|$\)') != -1
 				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.'$'.i.'\(\D\|$\)')
 				call add(snipPos[j][3], [0, 0])
-				let snipPos[j][3][-1][0] = a:lnum + s:Count(beforeMark, "\n")
-				let snipPos[j][3][-1][1] = a:indent + (snipPos[j][3][-1][0] > a:lnum
+				let markLnum = s:Count(beforeMark, "\n")
+				let snipPos[j][3][-1][0] = a:lnum + markLnum
+				let snipPos[j][3][-1][1] = a:indents[markLnum] + (snipPos[j][3][-1][0] > a:lnum
 				                           \ ? len(matchstr(beforeMark, '.*\n\zs.*'))
-				                           \ : a:col + len(beforeMark))
+				                           \ : a:col - a:indents[markLnum] + len(beforeMark))
 				let withoutOthers = substitute(withoutOthers, '$'.i.'\ze\(\D\|$\)', '', '')
 			endw
 		endif
