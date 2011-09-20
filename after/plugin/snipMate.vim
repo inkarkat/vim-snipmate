@@ -8,13 +8,14 @@ let s:did_snips_mappings = 1
 function! TriggerFilter( expr )
 	return (a:expr ==# "\<C-]>" ? '' : a:expr)
 endfunction
-function! TriggerSnippedAfterExpand()
+function! TriggerSnippetAfterExpand()
 	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c') 
 	return (l:lastInsertedChar ==# "\<C-]>" ? "\<BS>\<C-r>=TriggerFilter(TriggerSnippet())\<CR>" : '')
 endfunction
 
 let g:snipMate_triggerKey = "\<C-]>"
-imap <silent> <C-]> <C-]><c-r>=TriggerSnippedAfterExpand()<cr>
+let g:snipMate_reverseTriggerKey = "\<C-\>"
+imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr>
 snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
 ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
 snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
