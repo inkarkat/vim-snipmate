@@ -16,7 +16,13 @@ endif
 let loaded_snips = 1
 if !exists('snips_author') | let snips_author = 'Me' | endif
 
+fun! ReloadSnippets(...)
+	call ResetSnippets()
+	call GetSnippets(g:snippets_dir, '_')
+	call GetSnippets(g:snippets_dir, (a:0 ? a:1 : &ft))
+endfunction
 au BufRead,BufNewFile *.snippets\= set ft=snippet
+au BufWritePost *.snippets\= call ReloadSnippets(expand('<afile>:t:r'))
 au FileType snippet setl noet fdm=indent
 
 let s:snippets = {} | let s:multi_snips = {}
