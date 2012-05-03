@@ -20,10 +20,24 @@ fun! ReloadSnippets(...)
 	call ResetSnippets()
 	call GetSnippets(g:snippets_dir, '_')
 	call GetSnippets(g:snippets_dir, (a:0 ? a:1 : &ft))
-endfunction
+endf
 au BufRead,BufNewFile *.snippets\= set ft=snippet
 au BufWritePost *.snippets\= call ReloadSnippets(expand('<afile>:t:r'))
 au FileType snippet setl noet fdm=indent
+
+fun! AddSnippets(filespec)
+	if fnamemodify(a:filespec, ':e') !=# 'snippets'
+		let v:errmsg = 'Snippet must have ".snippets" extension: ' . a:filespec
+		echohl ErrorMsg
+		echomsg v:errmsg
+		echohl None
+		return
+	endif
+
+	let l:dirspec = fnamemodify(a:filespec, ':h')
+	let l:filename = fnamemodify(a:filespec, ':t:r')
+	call GetSnippets(l:dirspec, l:filename)
+endf
 
 let s:snippets = {} | let s:multi_snips = {}
 
