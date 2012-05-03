@@ -9,7 +9,7 @@ function! TriggerFilter( expr )
 	return (a:expr ==# "\<C-]>" ? '' : a:expr)
 endfunction
 function! TriggerSnippetAfterExpand()
-	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c') 
+	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c')
 	return (l:lastInsertedChar ==# "\<C-]>" ? "\<BS>\<C-r>=TriggerFilter(TriggerSnippet())\<CR>" : '')
 endfunction
 
@@ -20,6 +20,10 @@ snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
 ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
 snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
 ino  <silent> <C-r><C-]> <c-r>=ShowAvailableSnips()<cr>
+
+" Without this, you cannot move to the next tab stop after clearing a
+" placeholder with <BS>.
+snor <bs> b<bs>
 
 " The default mappings for these are annoying & sometimes break snipMate.
 " You can change them back if you want, I've put them here for convenience.
