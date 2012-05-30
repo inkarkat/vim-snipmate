@@ -79,7 +79,7 @@ fun snipMate#expandSnip(snip, col)
 		let l:cursorCol = col('.')
 
 		let lineIndentCols = map(range(lnum, endlnum), 's:ReIndent(v:val)')
-		let snipIndentCols = map(snipLines, 's:Indent(v:val) - 1')
+		let snipIndentCols = map(copy(snipLines), 's:Indent(v:val) - 1')
 		" The re-indenting may have changed the number of bytes allocated for
 		" the indent, and this change may be different for every snippet line.
 		let indents = []
