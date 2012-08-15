@@ -50,7 +50,7 @@ fun snipMate#expandSnip(snip, col)
 	" Expand snippet onto current position with the tab stops removed and
 	" escapings removed
 	let processedSnippet = substitute(snippet, s:unescapedDollar.'\%(\d\+\|{\d\+.\{-}}\)', '', 'g')
-	let processedSnippet = s:Unescape(processedSnippet, '$\')
+	let processedSnippet = s:Unescape(processedSnippet, '[$\\]')
 	let snipLines = split(processedSnippet, "\n", 1)
 
 	let endlnum = lnum + len(snipLines) - 1
@@ -132,7 +132,7 @@ endf
 
 " Prepare snippet to be processed by s:BuildTabStops
 fun s:Unescape(text, what)
-	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\\zs' . a:what, '', 'g')
+	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\\ze' . a:what, '', 'g')
 endf
 fun s:ProcessSnippet(snip)
 	let snippet = a:snip
@@ -142,7 +142,7 @@ fun s:ProcessSnippet(snip)
 	let snippet = s:Unescape(parts[0], '`')
 	let partIdx = 1
 	while partIdx < len(parts)
-		let snippet .= substitute(eval(s:Unescape(parts[partIdx], '`\')), "\n$", '', '')
+		let snippet .= substitute(eval(s:Unescape(parts[partIdx], '[`\\]')), "\n$", '', '')
 		let snippet .= s:Unescape(get(parts, partIdx + 1), '`')
 		let partIdx += 2
 	endwhile
