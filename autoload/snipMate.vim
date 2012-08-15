@@ -16,7 +16,7 @@ endf
 
 fun s:Indent(line)
 	return matchend(a:line, '^.\{-}\ze\(\S\|$\)') + 1
-endfun
+endf
 fun s:CorrectWrongIndent(indentStr)
 	let l:indentStr = a:indentStr
 
@@ -27,7 +27,7 @@ fun s:CorrectWrongIndent(indentStr)
 		let i += 1
 	endwhile
 	return indentStr
-endfun
+endf
 fun s:ReIndent(lnum)
 	let line = getline(a:lnum)
 	let nonIndentCol = s:Indent(line) - 1
@@ -39,7 +39,7 @@ fun s:ReIndent(lnum)
 	let stsIndentStr = repeat("\t", indent / &ts) . repeat(' ', indent % &ts)
 	call setline(a:lnum, stsIndentStr . nonIndentStr)
 	return strlen(stsIndentStr)
-endfun
+endf
 fun snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
 
@@ -47,8 +47,11 @@ fun snipMate#expandSnip(snip, col)
 	" Avoid error if eval evaluates to nothing
 	if snippet == '' | return '' | endif
 
-	" Expand snippet onto current position with the tab stops removed
-	let snipLines = split(substitute(snippet, '$\d\+\|${\d\+.\{-}}', '', 'g'), "\n", 1)
+	" Expand snippet onto current position with the tab stops removed and
+	" escapings removed
+	let processedSnippet = substitute(snippet, s:unescapedDollar.'\%(\d\+\|{\d\+.\{-}}\)', '', 'g')
+	let processedSnippet = s:Unescape(processedSnippet, '$\')
+	let snipLines = split(processedSnippet, "\n", 1)
 
 	let endlnum = lnum + len(snipLines) - 1
 	let line = getline(lnum)
@@ -128,20 +131,20 @@ fun snipMate#expandSnip(snip, col)
 endf
 
 " Prepare snippet to be processed by s:BuildTabStops
-fun s:UnescapeBacktick(text)
-	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\`', '`', 'g')
-endfun
+fun s:Unescape(text, what)
+	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\\zs' . a:what, '', 'g')
+endf
 fun s:ProcessSnippet(snip)
 	let snippet = a:snip
 
 	" Evaluate eval (`...`) expressions, unless escaped (\`).
 	let parts = split(snippet, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!`', 1)
-	let snippet = s:UnescapeBacktick(parts[0])
+	let snippet = s:Unescape(parts[0], '`')
 	let partIdx = 1
 	while partIdx < len(parts)
-	    let snippet .= substitute(eval(s:UnescapeBacktick(parts[partIdx])), "\n$", '', '')
-	    let snippet .= s:UnescapeBacktick(get(parts, partIdx + 1))
-	    let partIdx += 2
+		let snippet .= substitute(eval(s:Unescape(parts[partIdx], '`\')), "\n$", '', '')
+		let snippet .= s:Unescape(get(parts, partIdx + 1), '`')
+		let partIdx += 2
 	endwhile
 
 	let snippet = substitute(snippet, "\r", "\n", 'g')
@@ -149,16 +152,16 @@ fun s:ProcessSnippet(snip)
 	" Place all text after a colon in a tab stop after the tab stop
 	" (e.g. "${#:foo}" becomes "${:foo}foo").
 	" This helps tell the position of the tab stops later.
-	let snippet = substitute(snippet, '${\d\+:\(.\{-}\)}', '&\1', 'g')
+	let snippet = substitute(snippet, s:unescapedDollar.'{\d\+:\(.\{-}\)}', '&\1', 'g')
 
 	" Update the a:snip so that all the $# become the text after
 	" the colon in their associated ${#}.
 	" (e.g. "${1:foo}" turns all "$1"'s into "foo")
 	let i = 1
 	while stridx(snippet, '${'.i) != -1
-		let s = matchstr(snippet, '${'.i.':\zs.\{-}\ze}')
+		let s = matchstr(snippet, s:unescapedDollar.'{'.i.':\zs.\{-}\ze}')
 		if s != ''
-			let snippet = substitute(snippet, '$'.i, s.'&', 'g')
+			let snippet = substitute(snippet, s:unescapedDollar.i, s.'&', 'g')
 		endif
 		let i += 1
 	endw
@@ -193,36 +196,37 @@ endf
 "     the matches of "$#", to be replaced with the placeholder. This list is
 "     composed the same way as the parent; the first item is the line number,
 "     and the second is the column.
+let s:unescapedDollar =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!$'
 fun s:BuildTabStops(snip, lnum, col, indents)
 	let snipPos = []
 	let i = 1
-	let withoutVars = substitute(a:snip, '$\d\+', '', 'g')
-	while stridx(a:snip, '${'.i) != -1
-		let beforeTabStop = matchstr(withoutVars, '^.*\ze${'.i.'\D')
-		let withoutOthers = substitute(withoutVars, '${\('.i.'\D\)\@!\d\+.\{-}}', '', 'g')
+	let withoutVars = substitute(a:snip, s:unescapedDollar.'\d\+', '', 'g')
+	while match(a:snip, s:unescapedDollar.'{'.i) != -1
+		let beforeTabStop = matchstr(withoutVars, '^.*\ze'.s:unescapedDollar.'{'.i.'\D')
+		let withoutOthers = substitute(withoutVars, s:unescapedDollar.'{\('.i.'\D\)\@!\d\+.\{-}}', '', 'g')
 
 		let j = i - 1
 		call add(snipPos, [0, 0, -1])
 		let tabStopLnum = s:Count(beforeTabStop, "\n")
 		let snipPos[j][0] = a:lnum + tabStopLnum
-		let snipPos[j][1] = a:indents[tabStopLnum] + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze${'.i.'\D'))
+		let snipPos[j][1] = a:indents[tabStopLnum] + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze'.s:unescapedDollar.'{'.i.'\D'))
 		if snipPos[j][0] == a:lnum | let snipPos[j][1] += a:col - a:indents[0] | endif
 
 		" Get all $# matches in another list, if ${#:name} is given
-		if stridx(withoutVars, '${'.i.':') != -1
-			let snipPos[j][2] = len(matchstr(withoutVars, '${'.i.':\zs.\{-}\ze}'))
+		if match(withoutVars, s:unescapedDollar.'{'.i.':') != -1
+			let snipPos[j][2] = len(matchstr(withoutVars, s:unescapedDollar.'{'.i.':\zs.\{-}\ze}'))
 			let dots = repeat('.', snipPos[j][2])
 			call add(snipPos[j], [])
-			let withoutOthers = substitute(a:snip, '${\d\+.\{-}}\|$'.i.'\@!\d\+', '', 'g')
-			while match(withoutOthers, '$'.i.'\(\D\|$\)') != -1
-				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.'$'.i.'\(\D\|$\)')
+			let withoutOthers = substitute(a:snip, s:unescapedDollar.'{\d\+.\{-}}\|$'.i.'\@!\d\+', '', 'g')
+			while match(withoutOthers, s:unescapedDollar.i.'\(\D\|$\)') != -1
+				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.s:unescapedDollar.i.'\(\D\|$\)')
 				call add(snipPos[j][3], [0, 0])
 				let markLnum = s:Count(beforeMark, "\n")
 				let snipPos[j][3][-1][0] = a:lnum + markLnum
 				let snipPos[j][3][-1][1] = a:indents[markLnum] + (snipPos[j][3][-1][0] > a:lnum
 				                           \ ? len(matchstr(beforeMark, '.*\n\zs.*'))
 				                           \ : a:col - a:indents[markLnum] + len(beforeMark))
-				let withoutOthers = substitute(withoutOthers, '$'.i.'\ze\(\D\|$\)', '', '')
+				let withoutOthers = substitute(withoutOthers, s:unescapedDollar.i.'\ze\(\D\|$\)', '', '')
 			endw
 		endif
 		let i += 1
