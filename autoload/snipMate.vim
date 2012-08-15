@@ -135,8 +135,10 @@ fun s:ProcessSnippet(snip)
 	if stridx(snippet, '`') != -1
 		while match(snippet, '`.\{-}`') != -1
 			let snippet = substitute(snippet, '`.\{-}`',
+					\   escape(
 						\ substitute(eval(matchstr(snippet, '`\zs.\{-}\ze`')),
-						\ "\n\\%$", '', ''), '')
+						\ "\n\\%$", '', ''),
+						\ '\&'), '')
 		endw
 		let snippet = substitute(snippet, "\r", "\n", 'g')
 	endif
