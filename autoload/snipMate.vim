@@ -128,20 +128,23 @@ fun snipMate#expandSnip(snip, col)
 endf
 
 " Prepare snippet to be processed by s:BuildTabStops
+fun s:UnescapeBacktick(text)
+	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\`', '`', 'g')
+endfun
 fun s:ProcessSnippet(snip)
 	let snippet = a:snip
-	" Evaluate eval (`...`) expressions.
-	" Using a loop here instead of a regex fixes a bug with nested "\=".
-	if stridx(snippet, '`') != -1
-		while match(snippet, '`.\{-}`') != -1
-			let snippet = substitute(snippet, '`.\{-}`',
-					\   escape(
-						\ substitute(eval(matchstr(snippet, '`\zs.\{-}\ze`')),
-						\ "\n\\%$", '', ''),
-						\ '\&'), '')
-		endw
-		let snippet = substitute(snippet, "\r", "\n", 'g')
-	endif
+
+	" Evaluate eval (`...`) expressions, unless escaped (\`).
+	let parts = split(snippet, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!`', 1)
+	let snippet = s:UnescapeBacktick(parts[0])
+	let partIdx = 1
+	while partIdx < len(parts)
+	    let snippet .= substitute(eval(s:UnescapeBacktick(parts[partIdx])), "\n$", '', '')
+	    let snippet .= s:UnescapeBacktick(get(parts, partIdx + 1))
+	    let partIdx += 2
+	endwhile
+
+	let snippet = substitute(snippet, "\r", "\n", 'g')
 
 	" Place all text after a colon in a tab stop after the tab stop
 	" (e.g. "${#:foo}" becomes "${:foo}foo").
