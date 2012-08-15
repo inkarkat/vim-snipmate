@@ -40,6 +40,7 @@ fun s:ReIndent(lnum)
 	call setline(a:lnum, stsIndentStr . nonIndentStr)
 	return strlen(stsIndentStr)
 endf
+let s:unescapedDollar =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!$'
 fun snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
 
@@ -105,6 +106,10 @@ fun snipMate#expandSnip(snip, col)
 	" Open any folds snippet expands into
 	if &fen | sil! exe lnum.','.endlnum.'foldopen' | endif
 
+	" For correct accounting, unescape the snippet and avoid that the
+	" formerly escaped dollar signs are interpreted as placeholders /
+	" mirrors. This is done by simply replacing them with a "harmless"
+	" character.
 	let [g:snipPos, s:snipLen] = s:BuildTabStops(s:Defuse(snippet, '[$\\]'), lnum, col, indents)
 
 	if s:snipLen
@@ -199,37 +204,36 @@ endf
 "     the matches of "$#", to be replaced with the placeholder. This list is
 "     composed the same way as the parent; the first item is the line number,
 "     and the second is the column.
-let s:unescapedDollar =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!$'
 fun s:BuildTabStops(snip, lnum, col, indents)
 	let snipPos = []
 	let i = 1
-	let withoutVars = substitute(a:snip, s:unescapedDollar.'\d\+', '', 'g')
-	while match(a:snip, s:unescapedDollar.'{'.i) != -1
-		let beforeTabStop = matchstr(withoutVars, '^.*\ze'.s:unescapedDollar.'{'.i.'\D')
-		let withoutOthers = substitute(withoutVars, s:unescapedDollar.'{\('.i.'\D\)\@!\d\+.\{-}}', '', 'g')
+	let withoutVars = substitute(a:snip, '$\d\+', '', 'g')
+	while stridx(a:snip, '${'.i) != -1
+		let beforeTabStop = matchstr(withoutVars, '^.*\ze${'.i.'\D')
+		let withoutOthers = substitute(withoutVars, '${\('.i.'\D\)\@!\d\+.\{-}}', '', 'g')
 
 		let j = i - 1
 		call add(snipPos, [0, 0, -1])
 		let tabStopLnum = s:Count(beforeTabStop, "\n")
 		let snipPos[j][0] = a:lnum + tabStopLnum
-		let snipPos[j][1] = a:indents[tabStopLnum] + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze'.s:unescapedDollar.'{'.i.'\D'))
+		let snipPos[j][1] = a:indents[tabStopLnum] + len(matchstr(withoutOthers, '.*\(\n\|^\)\zs.*\ze${'.i.'\D'))
 		if snipPos[j][0] == a:lnum | let snipPos[j][1] += a:col - a:indents[0] | endif
 
 		" Get all $# matches in another list, if ${#:name} is given
-		if match(withoutVars, s:unescapedDollar.'{'.i.':') != -1
-			let snipPos[j][2] = len(matchstr(withoutVars, s:unescapedDollar.'{'.i.':\zs.\{-}\ze}'))
+		if stridx(withoutVars, '${'.i.':') != -1
+			let snipPos[j][2] = len(matchstr(withoutVars, '${'.i.':\zs.\{-}\ze}'))
 			let dots = repeat('.', snipPos[j][2])
 			call add(snipPos[j], [])
-			let withoutOthers = substitute(a:snip, s:unescapedDollar.'{\d\+.\{-}}\|$'.i.'\@!\d\+', '', 'g')
-			while match(withoutOthers, s:unescapedDollar.i.'\(\D\|$\)') != -1
-				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.s:unescapedDollar.i.'\(\D\|$\)')
+			let withoutOthers = substitute(a:snip, '${\d\+.\{-}}\|$'.i.'\@!\d\+', '', 'g')
+			while match(withoutOthers, '$'.i.'\(\D\|$\)') != -1
+				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.'$'.i.'\(\D\|$\)')
 				call add(snipPos[j][3], [0, 0])
 				let markLnum = s:Count(beforeMark, "\n")
 				let snipPos[j][3][-1][0] = a:lnum + markLnum
 				let snipPos[j][3][-1][1] = a:indents[markLnum] + (snipPos[j][3][-1][0] > a:lnum
 				                           \ ? len(matchstr(beforeMark, '.*\n\zs.*'))
 				                           \ : a:col - a:indents[markLnum] + len(beforeMark))
-				let withoutOthers = substitute(withoutOthers, s:unescapedDollar.i.'\ze\(\D\|$\)', '', '')
+				let withoutOthers = substitute(withoutOthers, '$'.i.'\ze\(\D\|$\)', '', '')
 			endw
 		endif
 		let i += 1
