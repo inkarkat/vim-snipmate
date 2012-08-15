@@ -105,7 +105,7 @@ fun snipMate#expandSnip(snip, col)
 	" Open any folds snippet expands into
 	if &fen | sil! exe lnum.','.endlnum.'foldopen' | endif
 
-	let [g:snipPos, s:snipLen] = s:BuildTabStops(snippet, lnum, col, indents)
+	let [g:snipPos, s:snipLen] = s:BuildTabStops(s:Defuse(snippet, '[$\\]'), lnum, col, indents)
 
 	if s:snipLen
 		aug snipMateAutocmds
@@ -133,6 +133,9 @@ endf
 " Prepare snippet to be processed by s:BuildTabStops
 fun s:Unescape(text, what)
 	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\\ze' . a:what, '', 'g')
+endf
+fun s:Defuse(text, what)
+	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\' . a:what, '?', 'g')
 endf
 fun s:ProcessSnippet(snip)
 	let snippet = a:snip
