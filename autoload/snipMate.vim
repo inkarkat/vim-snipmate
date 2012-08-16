@@ -40,7 +40,8 @@ fun s:ReIndent(lnum)
 	call setline(a:lnum, stsIndentStr . nonIndentStr)
 	return strlen(stsIndentStr)
 endf
-let s:unescapedDollar =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!$'
+let s:unescaped =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!'
+let s:unescapedDollar =  s:unescaped . '$'
 fun snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
 
@@ -137,16 +138,16 @@ endf
 
 " Prepare snippet to be processed by s:BuildTabStops
 fun s:Unescape(text, what)
-	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\\ze' . a:what, '', 'g')
+	return substitute(a:text, s:unescaped.'\\\ze' . a:what, '', 'g')
 endf
 fun s:Defuse(text, what)
-	return substitute(a:text, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\\' . a:what, '?', 'g')
+	return substitute(a:text, s:unescaped.'\\' . a:what, '?', 'g')
 endf
 fun s:ProcessSnippet(snip)
 	let snippet = a:snip
 
 	" Evaluate eval (`...`) expressions, unless escaped (\`).
-	let parts = split(snippet, '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!`', 1)
+	let parts = split(snippet, s:unescaped.'`', 1)
 	let snippet = s:Unescape(parts[0], '`')
 	let partIdx = 1
 	while partIdx < len(parts)
