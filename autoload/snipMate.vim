@@ -257,11 +257,7 @@ fun! snipMate#jumpTabStop(backwards)
 
 	" Don't reselect placeholder if it has been modified
 	if leftPlaceholder && g:snipPos[s:curPos][2] != -1
-		if exists('startPlaceholder')
-echomsg "%%%%" startPlaceholder g:snipPos[s:curPos][1]
-			"let g:snipPos[s:curPos][1] = startPlaceholder
-		else
-echomsg "%%%%modified"
+		if ! exists('startPlaceholder')
 			let g:snipPos[s:curPos][1] = col('.')
 			let g:snipPos[s:curPos][2] = 0
 		endif
@@ -288,7 +284,6 @@ endf
 
 fun! s:UpdatePlaceholderTabStops()
 	let changeLen = s:origWordLen - g:snipPos[s:curPos][2]
-echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) changeLen
 	unl s:startCol s:origWordLen s:update
 	if !exists('s:oldVars') | return | endif
 	" Update tab stops in snippet if text has been added via "$#"
@@ -314,12 +309,12 @@ echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) chang
 				endif
 			endfor
 			if isCurrent
-			    let l:changed -= 1
+				" Must process the current entry, but with a reduced
+				" count?!
+				let l:changed -= 1
 			endif
-"echomsg '****' string(pos) changeLen changed
 			let pos[1] -= changeLen * changed
 			let pos[2] -= changeLen * changedVars " Parse variables within placeholders
-"echomsg '***>' string(pos)
                                                   " e.g., "${1:foo} ${2:$1bar}"
 
 			if isCurrent | continue | endif
@@ -341,7 +336,6 @@ echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) chang
 endf
 
 fun! s:UpdateTabStops()
-echomsg 'UpdateTabStops()'
 	let changeLine = s:endLine - g:snipPos[s:curPos][0]
 	let changeCol = s:endCol - g:snipPos[s:curPos][1]
 	if exists('s:origWordLen')
@@ -478,7 +472,6 @@ fun! s:UpdateVars()
 	endif
 
 	let changeLen = g:snipPos[s:curPos][2] - newWordLen
-echomsg 'UpdateVars()' string(changeLen) string(g:snipPos[s:curPos][3])
 	let curLine = line('.')
 	let startCol = col('.')
 	let oldStartSnip = s:startCol
@@ -505,11 +498,10 @@ echomsg 'UpdateVars()' string(changeLen) string(g:snipPos[s:curPos][3])
 			endif
 			let i += 1
 		endif
-echomsg '????' col
 		if col > 0 " XXX: To avoid script error.
-		" "Very nomagic" is used here to allow special characters.
-		call setline(lnum, substitute(getline(lnum), '\%'.col.'c\V'.
-						\ escape(s:oldWord, '\'), escape(newWord, '\&'), ''))
+			" "Very nomagic" is used here to allow special characters.
+			call setline(lnum, substitute(getline(lnum), '\%'.col.'c\V'.
+							\ escape(s:oldWord, '\'), escape(newWord, '\&'), ''))
 		endif
 	endfor
 	if oldStartSnip != s:startCol
