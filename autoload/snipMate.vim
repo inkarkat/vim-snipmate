@@ -20,7 +20,7 @@ endf
 fun s:CorrectWrongIndent(indentStr)
 	let l:indentStr = a:indentStr
 
-	" Spaces before Tabs may not contribute to indent, so remove them. 
+	" Spaces before Tabs may not contribute to indent, so remove them.
 	let i = 1
 	while indentStr =~# '\%>' . (i * 8) . 'v.'
 		let indentStr = substitute(indentStr, printf("\\%%%dv \\{1,%d}\\t", i * 8 + 1, &ts - 1), "\t", 'g')
@@ -51,7 +51,7 @@ fun snipMate#expandSnip(snip, col)
 
 	" Expand snippet onto current position with the tab stops removed and
 	" escapings removed
-	let processedSnippet = substitute(snippet, s:unescapedDollar.'\%(\d\+\|{\d\+.\{-}}\)', '', 'g')
+	let processedSnippet = substitute(snippet, s:unescapedDollar.'\%(\d\+\|{\d\+.\{-}'.s:unescaped.'}\)', '', 'g')
 	let processedSnippet = s:Unescape(processedSnippet, '[$\\]')
 	let snipLines = split(processedSnippet, "\n", 1)
 
@@ -79,7 +79,7 @@ fun snipMate#expandSnip(snip, col)
 	" Correct the indent to tabs followed by optional spaces if 'softtabstop'
 	" This merges the existing indent with the snippet's indent (which was
 	" preliminarily converted to spaces), and ensures that the result again is a
-	" proper 'softtabstop' indent of tabs followed by optional spaces. 
+	" proper 'softtabstop' indent of tabs followed by optional spaces.
 	if &sts && ! &et
 		let l:cursorCol = col('.')
 
@@ -161,14 +161,14 @@ fun s:ProcessSnippet(snip)
 	" Place all text after a colon in a tab stop after the tab stop
 	" (e.g. "${#:foo}" becomes "${:foo}foo").
 	" This helps tell the position of the tab stops later.
-	let snippet = substitute(snippet, s:unescapedDollar.'{\d\+:\(.\{-}\)}', '&\1', 'g')
+	let snippet = substitute(snippet, s:unescapedDollar.'{\d\+:\(.\{-}'.s:unescaped.'\)}', '\=submatch(0) . s:Unescape(submatch(1), "}")', 'g')
 
 	" Update the a:snip so that all the $# become the text after
 	" the colon in their associated ${#}.
 	" (e.g. "${1:foo}" turns all "$1"'s into "foo")
 	let i = 1
 	while stridx(snippet, '${'.i) != -1
-		let s = matchstr(snippet, s:unescapedDollar.'{'.i.':\zs.\{-}\ze}')
+		let s = matchstr(snippet, s:unescapedDollar.'{'.i.':\zs.\{-}'.s:unescaped.'\ze}')
 		if s != ''
 			let snippet = substitute(snippet, s:unescapedDollar.i, s.'&', 'g')
 		endif
@@ -211,7 +211,7 @@ fun s:BuildTabStops(snip, lnum, col, indents)
 	let withoutVars = substitute(a:snip, '$\d\+', '', 'g')
 	while stridx(a:snip, '${'.i) != -1
 		let beforeTabStop = matchstr(withoutVars, '^.*\ze${'.i.'\D')
-		let withoutOthers = substitute(withoutVars, '${\('.i.'\D\)\@!\d\+.\{-}}', '', 'g')
+		let withoutOthers = substitute(withoutVars, '${\('.i.'\D\)\@!\d\+.\{-}'.s:unescaped.'}', '', 'g')
 
 		let j = i - 1
 		call add(snipPos, [0, 0, -1])
@@ -222,10 +222,10 @@ fun s:BuildTabStops(snip, lnum, col, indents)
 
 		" Get all $# matches in another list, if ${#:name} is given
 		if stridx(withoutVars, '${'.i.':') != -1
-			let snipPos[j][2] = len(matchstr(withoutVars, '${'.i.':\zs.\{-}\ze}'))
+			let snipPos[j][2] = len(s:Unescape(matchstr(withoutVars, '${'.i.':\zs.\{-}\ze'.s:unescaped.'}'), '[}\\]'))
 			let dots = repeat('.', snipPos[j][2])
 			call add(snipPos[j], [])
-			let withoutOthers = substitute(a:snip, '${\d\+.\{-}}\|$'.i.'\@!\d\+', '', 'g')
+			let withoutOthers = substitute(a:snip, '${\d\+.\{-}'.s:unescaped.'}\|$'.i.'\@!\d\+', '', 'g')
 			while match(withoutOthers, '$'.i.'\(\D\|$\)') != -1
 				let beforeMark = matchstr(withoutOthers, '^.\{-}\ze'.dots.'$'.i.'\(\D\|$\)')
 				call add(snipPos[j][3], [0, 0])
