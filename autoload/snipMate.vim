@@ -4,7 +4,7 @@ fun! Filename(...)
 	return !a:0 || a:1 == '' ? filename : substitute(a:1, '$1', filename, 'g')
 endf
 
-fun s:RemoveSnippet()
+fun! s:RemoveSnippet()
 	unl! g:snipPos s:curPos s:snipLen s:endCol s:endLine s:prevLen
 	     \ s:lastBuf s:oldWord
 	if exists('s:update')
@@ -14,10 +14,10 @@ fun s:RemoveSnippet()
 	aug! snipMateAutocmds
 endf
 
-fun s:Indent(line)
+fun! s:Indent(line)
 	return matchend(a:line, '^.\{-}\ze\(\S\|$\)') + 1
 endf
-fun s:CorrectWrongIndent(indentStr)
+fun! s:CorrectWrongIndent(indentStr)
 	let l:indentStr = a:indentStr
 
 	" Spaces before Tabs may not contribute to indent, so remove them.
@@ -28,7 +28,7 @@ fun s:CorrectWrongIndent(indentStr)
 	endwhile
 	return indentStr
 endf
-fun s:ReIndent(lnum)
+fun! s:ReIndent(lnum)
 	let line = getline(a:lnum)
 	let nonIndentCol = s:Indent(line) - 1
 	let indentStr = strpart(line, 0, nonIndentCol)
@@ -42,7 +42,7 @@ fun s:ReIndent(lnum)
 endf
 let s:unescaped =  '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!'
 let s:unescapedDollar =  s:unescaped . '$'
-fun snipMate#expandSnip(snip, col)
+fun! snipMate#expandSnip(snip, col)
 	let lnum = line('.') | let col = a:col
 
 	let snippet = s:ProcessSnippet(a:snip)
@@ -137,13 +137,13 @@ fun snipMate#expandSnip(snip, col)
 endf
 
 " Prepare snippet to be processed by s:BuildTabStops
-fun s:Unescape(text, what)
+fun! s:Unescape(text, what)
 	return substitute(a:text, s:unescaped.'\\\ze' . a:what, '', 'g')
 endf
-fun s:Defuse(text, what)
+fun! s:Defuse(text, what)
 	return substitute(a:text, s:unescaped.'\\' . a:what, '?', 'g')
 endf
-fun s:ProcessSnippet(snip)
+fun! s:ProcessSnippet(snip)
 	let snippet = a:snip
 
 	" Evaluate eval (`...`) expressions, unless escaped (\`).
@@ -184,7 +184,7 @@ fun s:ProcessSnippet(snip)
 endf
 
 " Counts occurences of haystack in needle
-fun s:Count(haystack, needle)
+fun! s:Count(haystack, needle)
 	let counter = 0
 	let index = stridx(a:haystack, a:needle)
 	while index != -1
@@ -205,7 +205,7 @@ endf
 "     the matches of "$#", to be replaced with the placeholder. This list is
 "     composed the same way as the parent; the first item is the line number,
 "     and the second is the column.
-fun s:BuildTabStops(snip, lnum, col, indents)
+fun! s:BuildTabStops(snip, lnum, col, indents)
 	let snipPos = []
 	let i = 1
 	let withoutVars = substitute(a:snip, '$\d\+', '', 'g')
@@ -242,17 +242,17 @@ fun s:BuildTabStops(snip, lnum, col, indents)
 	return [snipPos, i - 1]
 endf
 
-fun snipMate#jumpTabStop(backwards)
-	let leftPlaceholder = exists('s:origWordLen')
-	                      \ && s:origWordLen != g:snipPos[s:curPos][2]
-	if leftPlaceholder && exists('s:oldEndCol')
-		let startPlaceholder = s:oldEndCol + 1
-	endif
-
+fun! snipMate#jumpTabStop(backwards)
 	if exists('s:update')
 		call s:UpdatePlaceholderTabStops()
 	else
 		call s:UpdateTabStops()
+	endif
+
+	let leftPlaceholder = exists('s:origWordLen')
+	                      \ && s:origWordLen != g:snipPos[s:curPos][2]
+	if leftPlaceholder && exists('s:oldEndCol')
+		let startPlaceholder = s:oldEndCol + 1
 	endif
 
 	" Don't reselect placeholder if it has been modified
@@ -284,8 +284,9 @@ fun snipMate#jumpTabStop(backwards)
 	return g:snipPos[s:curPos][2] == -1 ? '' : s:SelectWord()
 endf
 
-fun s:UpdatePlaceholderTabStops()
+fun! s:UpdatePlaceholderTabStops()
 	let changeLen = s:origWordLen - g:snipPos[s:curPos][2]
+echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) changeLen
 	unl s:startCol s:origWordLen s:update
 	if !exists('s:oldVars') | return | endif
 	" Update tab stops in snippet if text has been added via "$#"
@@ -294,7 +295,7 @@ fun s:UpdatePlaceholderTabStops()
 		let curLine = line('.')
 
 		for pos in g:snipPos
-			if pos == g:snipPos[s:curPos] | continue | endif
+			"if pos == g:snipPos[s:curPos] | continue | endif
 			let changed = pos[0] == curLine && pos[1] > s:oldEndCol
 			let changedVars = 0
 			let endPlaceholder = pos[2] - 1 + pos[1]
@@ -303,6 +304,7 @@ fun s:UpdatePlaceholderTabStops()
 			for [lnum, col] in s:oldVars
 				if lnum > pos[0] | break | endif
 				if pos[0] == lnum
+"echomsg '####' col
 					if pos[1] > col || (pos[2] == -1 && pos[1] == col)
 						let changed += 1
 					elseif col < endPlaceholder
@@ -310,10 +312,17 @@ fun s:UpdatePlaceholderTabStops()
 					endif
 				endif
 			endfor
+			if pos == g:snipPos[s:curPos]
+			    let l:changed -= 1
+			    echomsg '!!!!' l:changed
+			endif
+echomsg '****' string(pos) changeLen changed
 			let pos[1] -= changeLen * changed
 			let pos[2] -= changeLen * changedVars " Parse variables within placeholders
+echomsg '***>' string(pos)
                                                   " e.g., "${1:foo} ${2:$1bar}"
 
+			if pos == g:snipPos[s:curPos] | continue | endif
 			if pos[2] == -1 | continue | endif
 			" Do the same to any placeholders in the other tab stops.
 			for nPos in pos[3]
@@ -331,7 +340,8 @@ fun s:UpdatePlaceholderTabStops()
 	unl s:endCol s:oldVars s:oldEndCol
 endf
 
-fun s:UpdateTabStops()
+fun! s:UpdateTabStops()
+echomsg 'UpdateTabStops()'
 	let changeLine = s:endLine - g:snipPos[s:curPos][0]
 	let changeCol = s:endCol - g:snipPos[s:curPos][1]
 	if exists('s:origWordLen')
@@ -375,7 +385,7 @@ fun s:UpdateTabStops()
 	endif
 endf
 
-fun s:SelectWord()
+fun! s:SelectWord()
 	let s:origWordLen = g:snipPos[s:curPos][2]
 	let s:oldWord = strpart(getline('.'), g:snipPos[s:curPos][1] - 1,
 				\ s:origWordLen)
@@ -402,7 +412,7 @@ endf
 "
 " It also automatically quits the snippet if the cursor is moved out of it
 " while in insert mode.
-fun s:UpdateChangedSnip(entering)
+fun! s:UpdateChangedSnip(entering)
 	if exists('g:snipPos') && bufnr(0) != s:lastBuf
 		call s:RemoveSnippet()
 	elseif exists('s:update') " If modifying a placeholder
@@ -460,7 +470,7 @@ endf
 
 " This updates the variables in a snippet when a placeholder has been edited.
 " (e.g., each "$1" in "${1:foo} $1bar $1bar")
-fun s:UpdateVars()
+fun! s:UpdateVars()
 	let newWordLen = s:endCol - s:startCol + 1
 	let newWord = strpart(getline('.'), s:startCol, newWordLen)
 	if newWord == s:oldWord || empty(g:snipPos[s:curPos][3])
@@ -468,6 +478,7 @@ fun s:UpdateVars()
 	endif
 
 	let changeLen = g:snipPos[s:curPos][2] - newWordLen
+echomsg 'UpdateVars()' string(changeLen)
 	let curLine = line('.')
 	let startCol = col('.')
 	let oldStartSnip = s:startCol
