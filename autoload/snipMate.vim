@@ -506,9 +506,11 @@ echomsg 'UpdateVars()' string(changeLen) string(g:snipPos[s:curPos][3])
 			let i += 1
 		endif
 echomsg '????' col
+		if col > 0 " XXX: To avoid script error.
 		" "Very nomagic" is used here to allow special characters.
 		call setline(lnum, substitute(getline(lnum), '\%'.col.'c\V'.
 						\ escape(s:oldWord, '\'), escape(newWord, '\&'), ''))
+		endif
 	endfor
 	if oldStartSnip != s:startCol
 		call cursor(0, startCol + s:startCol - oldStartSnip)
