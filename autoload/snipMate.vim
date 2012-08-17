@@ -243,23 +243,25 @@ fun! s:BuildTabStops(snip, lnum, col, indents)
 endf
 
 fun! snipMate#jumpTabStop(backwards)
-	if exists('s:update')
-		call s:UpdatePlaceholderTabStops()
-	else
-		call s:UpdateTabStops()
-	endif
-
 	let leftPlaceholder = exists('s:origWordLen')
 	                      \ && s:origWordLen != g:snipPos[s:curPos][2]
 	if leftPlaceholder && exists('s:oldEndCol')
 		let startPlaceholder = s:oldEndCol + 1
 	endif
 
+	if exists('s:update')
+		call s:UpdatePlaceholderTabStops()
+	else
+		call s:UpdateTabStops()
+	endif
+
 	" Don't reselect placeholder if it has been modified
 	if leftPlaceholder && g:snipPos[s:curPos][2] != -1
 		if exists('startPlaceholder')
-			let g:snipPos[s:curPos][1] = startPlaceholder
+echomsg "%%%%" startPlaceholder g:snipPos[s:curPos][1]
+			"let g:snipPos[s:curPos][1] = startPlaceholder
 		else
+echomsg "%%%%modified"
 			let g:snipPos[s:curPos][1] = col('.')
 			let g:snipPos[s:curPos][2] = 0
 		endif
@@ -295,7 +297,7 @@ echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) chang
 		let curLine = line('.')
 
 		for pos in g:snipPos
-			"if pos == g:snipPos[s:curPos] | continue | endif
+			let isCurrent = (pos == g:snipPos[s:curPos])
 			let changed = pos[0] == curLine && pos[1] > s:oldEndCol
 			let changedVars = 0
 			let endPlaceholder = pos[2] - 1 + pos[1]
@@ -304,7 +306,6 @@ echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) chang
 			for [lnum, col] in s:oldVars
 				if lnum > pos[0] | break | endif
 				if pos[0] == lnum
-"echomsg '####' col
 					if pos[1] > col || (pos[2] == -1 && pos[1] == col)
 						let changed += 1
 					elseif col < endPlaceholder
@@ -312,17 +313,16 @@ echomsg 'UpdatePlaceholderTabStops()' s:curPos string(g:snipPos[s:curPos]) chang
 					endif
 				endif
 			endfor
-			if pos == g:snipPos[s:curPos]
+			if isCurrent
 			    let l:changed -= 1
-			    echomsg '!!!!' l:changed
 			endif
-echomsg '****' string(pos) changeLen changed
+"echomsg '****' string(pos) changeLen changed
 			let pos[1] -= changeLen * changed
 			let pos[2] -= changeLen * changedVars " Parse variables within placeholders
-echomsg '***>' string(pos)
+"echomsg '***>' string(pos)
                                                   " e.g., "${1:foo} ${2:$1bar}"
 
-			if pos == g:snipPos[s:curPos] | continue | endif
+			if isCurrent | continue | endif
 			if pos[2] == -1 | continue | endif
 			" Do the same to any placeholders in the other tab stops.
 			for nPos in pos[3]
@@ -478,7 +478,7 @@ fun! s:UpdateVars()
 	endif
 
 	let changeLen = g:snipPos[s:curPos][2] - newWordLen
-echomsg 'UpdateVars()' string(changeLen)
+echomsg 'UpdateVars()' string(changeLen) string(g:snipPos[s:curPos][3])
 	let curLine = line('.')
 	let startCol = col('.')
 	let oldStartSnip = s:startCol
@@ -505,7 +505,7 @@ echomsg 'UpdateVars()' string(changeLen)
 			endif
 			let i += 1
 		endif
-
+echomsg '????' col
 		" "Very nomagic" is used here to allow special characters.
 		call setline(lnum, substitute(getline(lnum), '\%'.col.'c\V'.
 						\ escape(s:oldWord, '\'), escape(newWord, '\&'), ''))
