@@ -5,17 +5,54 @@ if !exists('loaded_snips') || exists('s:did_snips_mappings')
 endif
 let s:did_snips_mappings = 1
 
-function! TriggerFilter( expr )
-	return (a:expr ==# "\<C-]>" ? '' : a:expr)
+function! s:RecordPosition()
+	" The position record consists of the current cursor position and the buffer
+	" number. When this position record is assigned to a window-local variable,
+	" it is also linked to the current window and tab page.
+	return getpos('.') + [bufnr('')]
 endfunction
+function! s:SetTriggerPosition()
+	let w:snipMate_TriggerPosition = s:RecordPosition()
+	return ''
+endfunction
+
+function! TriggerFilter( expr )
+	if a:expr ==# "\<C-]>"
+		" No snippet was expanded.
+		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
+			" Expansion was attempted at the same position before; leave insert
+			" mode.
+			return "\<C-\>\<C-n>"
+		else
+			return ''
+		endif
+	else
+		return a:expr
+	endif
+endfunction
+
 function! TriggerSnippetAfterExpand()
 	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c')
-	return (l:lastInsertedChar ==# "\<C-]>" ? "\<BS>\<C-r>=TriggerFilter(TriggerSnippet())\<CR>" : '')
+	if l:lastInsertedChar ==# "\<C-]>"
+		" No Vim abbreviation was expanded.
+		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
+			" Expansion was attempted at the same position before; leave insert
+			" mode.
+			return "\<BS>\<C-\>\<C-n>"
+		else
+			" Attempt snipMate snippet expansion.
+			return "\<BS>\<C-r>=TriggerFilter(TriggerSnippet())\<CR>"
+		endif
+	else
+		return ''
+	endif
 endfunction
 
 let g:snipMate_triggerKey = "\<C-]>"
 let g:snipMate_reverseTriggerKey = "\<C-\>"
-imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr>
+noremap  <silent> <expr> <SID>(RecordPosition) ''
+inoremap <silent> <expr> <SID>(RecordPosition) <SID>SetTriggerPosition()
+imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr><SID>(RecordPosition)
 snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
 ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
 snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
