@@ -19,7 +19,8 @@ imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr>
 snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
 ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
 snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
-ino  <silent> <C-x>g] <c-r>=ShowAvailableSnips()<cr>
+" Superseded by the superior SnippetCompleteSnipMate.vim.
+"ino  <silent> <C-x>% <c-r>=ShowAvailableSnips()<cr>
 
 " Without this, you cannot move to the next tab stop after clearing a
 " placeholder with <BS>.
