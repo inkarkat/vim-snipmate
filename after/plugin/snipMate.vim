@@ -23,9 +23,9 @@ function! TriggerFilter( expr )
 		" user. Otherwise, we're at the end of a snippet; do nothing in this
 		" case.
 
-		let l:wasSnipMateExpansion = exists('s:wasSnipMateExpansion') && s:wasSnipMateExpansion
-		let s:wasSnipMateExpansion = 0
-		if l:wasSnipMateExpansion
+		let l:lastSnipMateExpansionPosition = (exists('s:lastSnipMateExpansionPosition') ? s:lastSnipMateExpansionPosition : [])
+		let s:lastSnipMateExpansionPosition = []
+		if s:RecordPosition() == l:lastSnipMateExpansionPosition
 			" We had reached at the end of a snippet before; now leave insert
 			" mode.
 			return "\<C-\>\<C-n>"
@@ -35,7 +35,7 @@ function! TriggerFilter( expr )
 			return "\<C-\>\<C-o>\<Esc>"
 		endif
 	else
-		let s:wasSnipMateExpansion = 1
+		let s:lastSnipMateExpansionPosition = s:RecordPosition()
 		return a:expr
 	endif
 endfunction
