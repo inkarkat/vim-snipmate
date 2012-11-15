@@ -48,31 +48,17 @@ function! s:TriggerAbbreviation()
 	let s:triggerPos = getpos('.')
 	return "\<C-]>"
 endfunction
-function! CheckTriggerPosition()
-		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
-			echomsg '### gotcha'
-			" Expansion was attempted at the same position before; leave insert
-			" mode.
-			return "\<C-\>\<C-n>"
-		else
-			return ''
-		endif
-endfunction
 function! TriggerSnippetAfterExpand()
-			echomsg '#### at ' string(s:RecordPosition())
 	if getpos('.') == s:triggerPos
-			echomsg '#### noabbrev'
 		" No Vim abbreviation was expanded.
 		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
-			echomsg '### gotcha'
 			" Expansion was attempted at the same position before; leave insert
 			" mode.
 			return "\<C-\>\<C-n>"
 		else
-			echomsg '### snipmate'
 			" Attempt snipMate snippet expansion.
 			call s:SetTriggerPosition()
-			return TriggerFilter(TriggerSnippet()) . "\<C-r>=CheckTriggerPosition()\<CR>"
+			return TriggerFilter(TriggerSnippet())
 		endif
 	else
 		return ''
@@ -80,7 +66,6 @@ function! TriggerSnippetAfterExpand()
 endfunction
 inoremap <expr> <SID>(TriggerAbbreviation) <SID>TriggerAbbreviation()
 inoremap <silent> <script> <C-]> <SID>(TriggerAbbreviation)<c-r>=TriggerSnippetAfterExpand()<cr>
-let g:snipMate_triggerKey = ''
 else
 " The only way to trigger the expansion of abbreviations is via a direct :imap,
 " where the <C-]> must come first to avoid recursion. When no abbreviation has
@@ -103,9 +88,9 @@ function! TriggerSnippetAfterExpand()
 	endif
 endfunction
 imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr><SID>(RecordPosition)
-let g:snipMate_triggerKey = "\<C-]>"
 endif
 
+let g:snipMate_triggerKey = "\<C-]>"
 let g:snipMate_reverseTriggerKey = "\<C-\>"
 noremap  <silent> <expr> <SID>(RecordPosition) ''
 inoremap <silent> <expr> <SID>(RecordPosition) <SID>SetTriggerPosition()
