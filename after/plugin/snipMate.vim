@@ -19,14 +19,22 @@ endfunction
 function! TriggerFilter( expr )
 	if a:expr ==# "\<C-]>"
 		" No snippet was expanded.
+
+		" In case of a failed Vim abbreviation expansion, beep to notify the
+		" user. Otherwise, we're at the end of a snippet; do nothing in this
+		" case.
+		let l:keys = (exists('s:wasSnipMateExpansion') && s:wasSnipMateExpansion ? '' : "\<C-\>\<C-o>\<Esc>")
+		let s:wasSnipMateExpansion = 0
+
 		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
 			" Expansion was attempted at the same position before; leave insert
 			" mode.
 			return "\<C-\>\<C-n>"
 		else
-			return ''
+			return l:keys
 		endif
 	else
+		let s:wasSnipMateExpansion = 1
 		return a:expr
 	endif
 endfunction
