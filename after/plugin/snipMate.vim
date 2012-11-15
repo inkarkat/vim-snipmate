@@ -1,9 +1,8 @@
 " These are the mappings for snipMate.vim. Putting it here ensures that it
 " will be mapped after other plugins such as supertab.vim.
-if !exists('loaded_snips') || exists('s:did_snips_mappings')
+if !exists('loaded_snips')
 	finish
 endif
-let s:did_snips_mappings = 1
 
 function! s:RecordPosition()
 	" The position record consists of the current cursor position and the buffer
