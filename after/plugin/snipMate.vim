@@ -38,6 +38,37 @@ function! TriggerFilter( expr )
 	endif
 endfunction
 
+if v:version == 703 && has('patch489') || v:version > 703
+" Patch 7.3.489 fixes that CTRL-] in Insert mode does not expand abbreviation
+" when used in a mapping. We can now record the cursor position, trigger the
+" abbreviation via :map-expr, and after that compare the cursor position to
+" determine whether snipMate should be triggered.
+function! s:TriggerAbbreviation()
+	let s:triggerPos = getpos('.')
+	return "\<C-]>"
+endfunction
+function! TriggerSnippetAfterExpand()
+	if getpos('.') == s:triggerPos
+		" No Vim abbreviation was expanded.
+		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
+			" Expansion was attempted at the same position before; leave insert
+			" mode.
+			return "\<C-\>\<C-n>"
+		else
+			" Attempt snipMate snippet expansion.
+			return "\<C-r>=TriggerFilter(TriggerSnippet())\<CR>"
+		endif
+	else
+		return ''
+	endif
+endfunction
+inoremap <expr> <SID>(TriggerAbbreviation) <SID>TriggerAbbreviation()
+inoremap <silent> <script> <C-]> <SID>(TriggerAbbreviation)<c-r>=TriggerSnippetAfterExpand()<cr><SID>(RecordPosition)
+else
+" The only way to trigger the expansion of abbreviations is via a direct :imap,
+" where the <C-]> must come first to avoid recursion. When no abbreviation has
+" been expanded, the ^] character is inserted literally in the text. We check
+" for that character, remove it, and then trigger snipMate.
 function! TriggerSnippetAfterExpand()
 	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c')
 	if l:lastInsertedChar ==# "\<C-]>"
@@ -54,12 +85,13 @@ function! TriggerSnippetAfterExpand()
 		return ''
 	endif
 endfunction
+imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr><SID>(RecordPosition)
+endif
 
 let g:snipMate_triggerKey = "\<C-]>"
 let g:snipMate_reverseTriggerKey = "\<C-\>"
 noremap  <silent> <expr> <SID>(RecordPosition) ''
 inoremap <silent> <expr> <SID>(RecordPosition) <SID>SetTriggerPosition()
-imap <silent> <C-]> <C-]><c-r>=TriggerSnippetAfterExpand()<cr><SID>(RecordPosition)
 snor <silent> <C-]> <esc>i<right><c-r>=TriggerFilter(TriggerSnippet())<cr>
 ino  <silent> <C-\> <c-r>=TriggerFilter(BackwardsSnippet())<cr>
 snor <silent> <C-\> <esc>i<right><c-r>=TriggerFilter(BackwardsSnippet())<cr>
