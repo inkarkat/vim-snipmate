@@ -15,14 +15,14 @@ function! s:SetTriggerPosition()
 	return ''
 endfunction
 
+if v:version == 703 && has('patch489') || v:version > 703
+" Patch 7.3.489 fixes that CTRL-] in Insert mode does not expand abbreviation
+" when used in a mapping. We can now record the cursor position, trigger the
+" abbreviation via :map-expr, and after that compare the cursor position to
+" determine whether snipMate should be triggered.
 function! TriggerFilter( expr )
 	if a:expr ==# "\<C-]>"
 		" No snippet was expanded.
-
-		" In case of a failed Vim abbreviation expansion, beep to notify the
-		" user. Otherwise, we're at the end of a snippet; do nothing in this
-		" case.
-
 		let l:lastSnipMateExpansionPosition = (exists('s:lastSnipMateExpansionPosition') ? s:lastSnipMateExpansionPosition : [])
 		let s:lastSnipMateExpansionPosition = []
 		if s:RecordPosition() == l:lastSnipMateExpansionPosition
@@ -39,12 +39,6 @@ function! TriggerFilter( expr )
 		return a:expr
 	endif
 endfunction
-
-if v:version == 703 && has('patch489') || v:version > 703
-" Patch 7.3.489 fixes that CTRL-] in Insert mode does not expand abbreviation
-" when used in a mapping. We can now record the cursor position, trigger the
-" abbreviation via :map-expr, and after that compare the cursor position to
-" determine whether snipMate should be triggered.
 function! s:TriggerAbbreviation()
 	let s:triggerPos = getpos('.')
 	return "\<C-]>"
@@ -73,6 +67,28 @@ else
 " where the <C-]> must come first to avoid recursion. When no abbreviation has
 " been expanded, the ^] character is inserted literally in the text. We check
 " for that character, remove it, and then trigger snipMate.
+function! TriggerFilter( expr )
+	if a:expr ==# "\<C-]>"
+		" No snippet was expanded.
+
+		" In case of a failed Vim abbreviation expansion, beep to notify the
+		" user. Otherwise, we're at the end of a snippet; do nothing in this
+		" case.
+		let l:keys = (exists('s:wasSnipMateExpansion') && s:wasSnipMateExpansion ? '' : "\<C-\>\<C-o>\<Esc>")
+		let s:wasSnipMateExpansion = 0
+
+		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
+			" Expansion was attempted at the same position before; leave insert
+			" mode.
+			return "\<C-\>\<C-n>"
+		else
+			return l:keys
+		endif
+	else
+		let s:wasSnipMateExpansion = 1
+		return a:expr
+	endif
+endfunction
 function! TriggerSnippetAfterExpand()
 	let l:lastInsertedChar = matchstr(getline('.'), '.\%' . col('.') . 'c')
 	if l:lastInsertedChar ==# "\<C-]>"
