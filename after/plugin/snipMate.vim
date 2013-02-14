@@ -1,6 +1,11 @@
 " after/plugin/snipMate.vim: Extension of snipMate triggers.
 "
 " REVISION	DATE		REMARKS
+" 	051		15-Feb-2013	BUG: When aborting a snipMate expansion, :undo'ing the
+"						inserted snippet, and re-typing and re-triggering the
+"						snippet, it doesn't expand, but leaves insert mode. Must
+"						clear w:snipMate_TriggerPosition when a snippet has been
+"						expanded.
 " 	050		07-Feb-2013	BUG: With the new trigger implementation, snipMate
 " 						completion exits prematurely when an empty tabstop is
 " 						encountered immediately after an edited tabstop. (E.g.
@@ -37,8 +42,7 @@ function! TriggerFilter( expr )
 		let l:lastSnipMateExpansionPosition = (exists('s:lastSnipMateExpansionPosition') ? s:lastSnipMateExpansionPosition : [])
 		let s:lastSnipMateExpansionPosition = []
 		if s:RecordPosition() == l:lastSnipMateExpansionPosition
-			" We had reached at the end of a snippet before; now leave insert
-			" mode.
+			" We had reached the end of a snippet before; now leave insert mode.
 			return "\<C-\>\<C-n>"
 		else
 			" Beep to notify that neither snipMate nor Vim abbreviation were
@@ -46,6 +50,7 @@ function! TriggerFilter( expr )
 			return "\<C-\>\<C-o>\<Esc>"
 		endif
 	else
+		unlet! w:snipMate_TriggerPosition
 		let s:lastSnipMateExpansionPosition = s:RecordPosition()
 		return a:expr
 	endif
@@ -93,6 +98,7 @@ function! TriggerFilter( expr )
 			" mode.
 			return "\<C-\>\<C-n>"
 		else
+			unlet! w:snipMate_TriggerPosition
 			return l:keys
 		endif
 	else
