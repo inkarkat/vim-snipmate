@@ -1,3 +1,14 @@
+" after/plugin/snipMate.vim: Extension of snipMate triggers.
+"
+" REVISION	DATE		REMARKS
+" 	050		07-Feb-2013	BUG: With the new trigger implementation, snipMate
+" 						completion exits prematurely when an empty tabstop is
+" 						encountered immediately after an edited tabstop. (E.g.
+" 						my "hasmapto" snippet in vim.snippets.) Need to check
+" 						for active snipMate via g:snipPos.
+" 	...
+"	001		16-Sep-2009	file creation
+
 " These are the mappings for snipMate.vim. Putting it here ensures that it
 " will be mapped after other plugins such as supertab.vim.
 if !exists('loaded_snips')
@@ -46,9 +57,9 @@ endfunction
 function! TriggerSnippetAfterExpand()
 	if getpos('.') == s:triggerPos
 		" No Vim abbreviation was expanded.
-		if exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
-			" Expansion was attempted at the same position before; leave insert
-			" mode.
+		if ! exists('g:snipPos') && exists('w:snipMate_TriggerPosition') && w:snipMate_TriggerPosition == s:RecordPosition()
+			" snipMate isn't active (any more), and expansion was attempted at
+			" the same position before; leave insert mode.
 			return "\<C-\>\<C-n>"
 		else
 			" Attempt snipMate snippet expansion.
