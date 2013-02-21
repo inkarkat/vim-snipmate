@@ -226,7 +226,9 @@ fun s:ChooseSnippet(scope, trigger)
 		let i += 1
 	endfor
 	if i == 2 | return s:multi_snips[a:scope][a:trigger][0][1] | endif
+	call inputsave()
 	let num = inputlist(snippet) - 1
+	call inputrestore()
 	return num == -1 ? '' : s:multi_snips[a:scope][a:trigger][num][1]
 endf
 
