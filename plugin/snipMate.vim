@@ -168,7 +168,7 @@ fun! TriggerSnippet()
 		" the snippet.
 		if snippet != ''
 			let col = col('.') - len(trigger)
-			sil exe 's/\V'.escape(trigger, '/.').'\%#//'
+			sil exe 's/\V'.escape(trigger, '/\.').'\%#//'
 			return snipMate#expandSnip(snippet, col)
 		endif
 	endfor
