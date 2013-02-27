@@ -1,6 +1,12 @@
 " after/plugin/snipMate.vim: Extension of snipMate triggers.
 "
 " REVISION	DATE		REMARKS
+"	052		27-Feb-2013	For the new trigger implementation, set an undo point
+"						before attempting a trigger expansion (so that it's
+"						easier to undo only the snippet). Another (unavoidable)
+"						undo point is created after the initial expansion. The
+"						old trigger implementation somehow sets undo points
+"						after every inserted ^], anyway.
 " 	051		15-Feb-2013	BUG: When aborting a snipMate expansion, :undo'ing the
 "						inserted snippet, and re-typing and re-triggering the
 "						snippet, it doesn't expand, but leaves insert mode. Must
@@ -76,8 +82,12 @@ function! TriggerSnippetAfterExpand()
 		return ''
 	endif
 endfunction
+function! s:UndoPointBeforeSnippet()
+	return (exists('g:snipPos') ? '' : "\<C-g>u")
+endfunction
 inoremap <expr> <SID>(TriggerAbbreviation) <SID>TriggerAbbreviation()
-inoremap <silent> <script> <C-]> <SID>(TriggerAbbreviation)<c-r>=TriggerSnippetAfterExpand()<cr>
+inoremap <expr> <SID>(UndoPointBeforeSnippet) <SID>UndoPointBeforeSnippet()
+inoremap <silent> <script> <C-]> <SID>(TriggerAbbreviation)<SID>(UndoPointBeforeSnippet)<c-r>=TriggerSnippetAfterExpand()<cr>
 else
 " The only way to trigger the expansion of abbreviations is via a direct :imap,
 " where the <C-]> must come first to avoid recursion. When no abbreviation has
