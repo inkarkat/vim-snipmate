@@ -98,10 +98,10 @@ fun! snipMate#expandSnip(snip, col)
 		let lineIndentDelta = indents[0] - indent
 		if lineIndentDelta != 0
 			call cursor(line('.'), l:cursorCol + lineIndentDelta)
-			let col = col + lineIndentDelta
+			let col += lineIndentDelta
 		endif
 	else
-		let indents = repeat(indent, len(snipLines))
+		let indents = repeat([indent], len(snipLines))
 	endif
 
 	" Open any folds snippet expands into
