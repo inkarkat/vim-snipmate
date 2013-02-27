@@ -130,8 +130,9 @@ fun! snipMate#expandSnip(snip, col)
 		unl g:snipPos s:snipLen
 		" Place cursor at end of snippet if no tab stop is given
 		let newlines = len(snipLines) - 1
-		call cursor(lnum + newlines, indent + len(snipLines[-1]) - len(afterCursor)
-					\ + (newlines ? 0: col - 1))
+		let endCol = len(snipLines[-1]) - len(afterCursor)
+					 \ + (newlines ? indent : col)
+		call cursor(lnum + newlines, endCol)
 	endif
 	return ''
 endf
