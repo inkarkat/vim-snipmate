@@ -152,7 +152,20 @@ fun! s:ProcessSnippet(snip)
 	let snippet = s:Unescape(parts[0], '`')
 	let partIdx = 1
 	while partIdx < len(parts)
-		let snippet .= substitute(eval(s:Unescape(parts[partIdx], '[`\\]')), "\n$", '', '')
+		try
+			let snippet .= substitute(eval(s:Unescape(parts[partIdx], '[`\\]')), "\n$", '', '')
+		catch /^Vim\%((\a\+)\)\=:E/
+			" Echo error to indicate the problem to the user and return Vim's error
+			" message as the substitution result, so that the failed expansion can
+			" be located easily.
+			let v:errmsg = substitute(v:exception, '^Vim\%((\a\+)\)\=:', '', '')
+			echohl ErrorMsg
+			echomsg 'Error during snippet expansion: ' . v:errmsg
+			echohl None
+
+			" Include the failed part verbatim.
+			let snippet .= '`' . parts[partIdx] . '`'
+		endtry
 		let snippet .= s:Unescape(get(parts, partIdx + 1), '`')
 		let partIdx += 2
 	endwhile
