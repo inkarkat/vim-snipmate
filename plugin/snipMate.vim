@@ -44,14 +44,18 @@ let s:snippets = {} | let s:multi_snips = {}
 if !exists('snippets_dir')
 	let snippets_dir = substitute(globpath(&rtp, 'snippets/'), "\n", ',', 'g')
 endif
+fun! s:Scope( scope )
+	return (empty(a:scope) ? '_empty' : a:scope)
+endfunction
 
 fun! MakeSnip(scope, trigger, content, ...)
 	let multisnip = a:0 && a:1 != ''
+	let scope = s:Scope(a:scope)
 	let var = multisnip ? 's:multi_snips' : 's:snippets'
-	if !has_key({var}, a:scope) | let {var}[a:scope] = {} | endif
-	if !has_key({var}[a:scope], a:trigger)
-		let {var}[a:scope][a:trigger] = multisnip ? [[a:1, a:content]] : a:content
-	elseif multisnip | let {var}[a:scope][a:trigger] += [[a:1, a:content]]
+	if !has_key({var}, scope) | let {var}[scope] = {} | endif
+	if !has_key({var}[scope], a:trigger)
+		let {var}[scope][a:trigger] = multisnip ? [[a:1, a:content]] : a:content
+	elseif multisnip | let {var}[scope][a:trigger] += [[a:1, a:content]]
 	else
 		echom 'Warning in snipMate.vim: Snippet '.a:trigger.' is already defined.'
 				\ .' See :h multi_snip for help on snippets with multiple matches.'
@@ -162,7 +166,7 @@ fun! TriggerSnippet()
 	if exists('g:snipPos') | return snipMate#jumpTabStop(0) | endif
 
 	let word = matchstr(getline('.'), '\S\+\%'.col('.').'c')
-	for scope in [bufnr('%')] + split(&ft, '\.') + ['_']
+	for scope in [bufnr('%')] + (empty(&ft) ? [s:Scope('')] : split(&ft, '\.')) + ['_']
 		let [trigger, snippet] = s:GetSnippet(word, scope)
 		" If word is a trigger for a snippet, delete the trigger & expand
 		" the snippet.
@@ -242,7 +246,7 @@ fun! ShowAvailableSnips()
 	endif
 	let matchlen = 0
 	let matches = []
-	for scope in [bufnr('%')] + split(&ft, '\.') + ['_']
+	for scope in [bufnr('%')] + (empty(&ft) ? [s:Scope('')] : split(&ft, '\.')) + ['_']
 		let triggers = has_key(s:snippets, scope) ? keys(s:snippets[scope]) : []
 		if has_key(s:multi_snips, scope)
 			let triggers += keys(s:multi_snips[scope])
@@ -269,7 +273,7 @@ endf
 
 fun! GetSnipsInCurrentScope()
 	let snips = {}
-	for scope in [bufnr('%')] + split(&ft, '\.') + ['_']
+	for scope in [bufnr('%')] + (empty(&ft) ? [s:Scope('')] : split(&ft, '\.')) + ['_']
 		call extend(snips, get(s:snippets, scope, {}), 'keep')
 		call extend(snips, get(s:multi_snips, scope, {}), 'keep')
 	endfor
