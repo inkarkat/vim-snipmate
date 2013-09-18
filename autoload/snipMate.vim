@@ -175,7 +175,11 @@ fun! s:ProcessSnippet(snip)
 	" Place all text after a colon in a tab stop after the tab stop
 	" (e.g. "${#:foo}" becomes "${:foo}foo").
 	" This helps tell the position of the tab stops later.
-	let snippet = substitute(snippet, s:unescapedDollar.'{\d\+:\(.\{-}'.s:unescaped.'\)}', '\=submatch(0) . s:Unescape(submatch(1), "}")', 'g')
+	" As snipMate does not support tabstop text spanning multiple lines (i.e.
+	" containing newline characters), remove them from the tap stop; this means
+	" that only the first line will be editable. But this avoids index
+	" out-of-bounds errors in s:BuildTabStops().
+	let snippet = substitute(snippet, s:unescapedDollar.'{\d\+:\(.\{-}'.s:unescaped.'\)}', '\=substitute(submatch(0), "\\n", "", "g") . s:Unescape(submatch(1), "}")', 'g')
 
 	" Update the a:snip so that all the $# become the text after
 	" the colon in their associated ${#}.
