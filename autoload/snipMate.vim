@@ -154,7 +154,7 @@ fun! s:ProcessSnippet(snip)
 	while partIdx < len(parts)
 		try
 			let snippet .= substitute(eval(s:Unescape(parts[partIdx], '[`\\]')), "\n$", '', '')
-		catch /^Vim\%((\a\+)\)\=:E/
+		catch /^Vim\%((\a\+)\)\=:/
 			" Echo error to indicate the problem to the user and return Vim's error
 			" message as the substitution result, so that the failed expansion can
 			" be located easily.
@@ -529,4 +529,4 @@ fun! s:UpdateVars()
 	let s:oldWord = newWord
 	let g:snipPos[s:curPos][2] = newWordLen
 endf
-" vim:noet:sw=4:ts=4:ft=vim
+" vim:noet:sw=4:ts=4:sts=0

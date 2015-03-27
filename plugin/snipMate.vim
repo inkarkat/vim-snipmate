@@ -280,4 +280,4 @@ fun! GetSnipsInCurrentScope()
 	return snips
 endf
 
-" vim:noet:sw=4:ts=4:ft=vim
+" vim:noet:sw=4:ts=4:sts=0
