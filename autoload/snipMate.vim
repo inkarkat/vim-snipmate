@@ -5,7 +5,7 @@ fun! Filename(...)
 endf
 
 fun! s:RemoveSnippet()
-	unl! g:snipPos s:curPos s:snipLen s:endCol s:endLine s:prevLen
+	unl! g:snipPos g:snipRegister s:curPos s:snipLen s:endCol s:endLine s:prevLen
 	     \ s:lastBuf s:oldWord
 	if exists('s:update')
 		unl s:startCol s:origWordLen s:update
@@ -116,18 +116,19 @@ fun! snipMate#expandSnip(snip, col)
 	if s:snipLen
 		aug snipMateAutocmds
 			au CursorMovedI * call s:UpdateChangedSnip(0)
-			au InsertEnter * call s:UpdateChangedSnip(1)
+			au InsertEnter * call setreg('', g:snipRegister[0], g:snipRegister[1]) | call s:UpdateChangedSnip(1)
 		aug END
 		let s:lastBuf = bufnr(0) " Only expand snippet while in current buffer
 		let s:curPos = 0
 		let s:endCol = g:snipPos[s:curPos][1]
 		let s:endLine = g:snipPos[s:curPos][0]
+		let g:snipRegister = [getreg(''), getregtype('')]
 
 		call cursor(g:snipPos[s:curPos][0], g:snipPos[s:curPos][1])
 		let s:prevLen = [line('$'), col('$')]
 		if g:snipPos[s:curPos][2] != -1 | return s:SelectWord() | endif
 	else
-		unl g:snipPos s:snipLen
+		unl! g:snipPos g:snipRegister s:snipLen
 		" Place cursor at end of snippet if no tab stop is given
 		let newlines = len(snipLines) - 1
 		let endCol = len(snipLines[-1]) - len(afterCursor)
