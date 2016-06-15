@@ -189,7 +189,7 @@ fun! s:ProcessSnippet(snip)
 	while stridx(snippet, '${'.i) != -1
 		let s = matchstr(snippet, s:unescapedDollar.'{'.i.':\zs.\{-}'.s:unescaped.'\ze}')
 		if s != ''
-			let snippet = substitute(snippet, s:unescapedDollar.i, s.'&', 'g')
+			let snippet = substitute(snippet, s:unescapedDollar.i, escape(s, '\&').'&', 'g')
 		endif
 		let i += 1
 	endw
