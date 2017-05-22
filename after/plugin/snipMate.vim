@@ -26,12 +26,6 @@ if !exists('loaded_snips')
 	finish
 endif
 
-function! s:RecordPosition()
-	" The position record consists of the current cursor position and the buffer
-	" number. When this position record is assigned to a window-local variable,
-	" it is also linked to the current window and tab page.
-	return getpos('.') + [bufnr('')]
-endfunction
 function! s:SetTriggerPosition()
 	let w:snipMate_TriggerPosition = s:RecordPosition()
 	return ''
@@ -42,6 +36,16 @@ if v:version == 703 && has('patch489') || v:version > 703
 " when used in a mapping. We can now record the cursor position, trigger the
 " abbreviation via :map-expr, and after that compare the cursor position to
 " determine whether snipMate should be triggered.
+function! s:RecordPosition()
+	" The position record consists of the current cursor position and the buffer
+	" number. When this position record is assigned to a window-local variable,
+	" it is also linked to the current window and tab page.
+	" The change number is added to when a snippet expansion is undone, the
+	" change number is still incremented, so that the position doesn't match
+	" with the earlier record, and another snippet expansion is triggered
+	" instead of exiting insert mode.
+	return getpos('.') + [bufnr(''), b:changedtick]
+endfunction
 function! TriggerFilter( expr )
 	if a:expr ==# "\<C-]>"
 		" No snippet was expanded.
@@ -93,6 +97,12 @@ else
 " where the <C-]> must come first to avoid recursion. When no abbreviation has
 " been expanded, the ^] character is inserted literally in the text. We check
 " for that character, remove it, and then trigger snipMate.
+function! s:RecordPosition()
+	" The position record consists of the current cursor position and the buffer
+	" number. When this position record is assigned to a window-local variable,
+	" it is also linked to the current window and tab page.
+	return getpos('.') + [bufnr('')]
+endfunction
 function! TriggerFilter( expr )
 	if a:expr ==# "\<C-]>"
 		" No snippet was expanded.
@@ -170,4 +180,5 @@ endif
 call GetSnippets(snippets_dir, '_') " Get global snippets
 
 au FileType * if &buftype !=# 'help' && &buftype !=# 'quickfix' | call GetSnippets(snippets_dir, &ft) | endif
-" vim:noet:sw=4:ts=4:ft=vim
+
+" vim: set noet sw=4 ts=4 sts=0 :
