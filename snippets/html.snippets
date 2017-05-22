@@ -169,8 +169,10 @@ snippet label
 	<label for="${2:$1}">${1:name}</label><input type="${3:text/submit/hidden/button}" name="${4:$2}" value="${5}" id="${6:$2}"`Close()`>${7}
 snippet link
 	<link rel="${1:stylesheet}" href="${2:/css/master.css}" type="text/css" media="${3:screen}" charset="utf-8"`Close()`>${4}
+snippet a
+	<a href="${1:`ingo#str#Trim(@+)`}" class="external">${2:`ingourltitle#Extract(@+)`}</a>${3}
 snippet mailto
-	<a href="mailto:${1:joe@example.com}?subject=${2:feedback}">${3:email me}</a>
+	<a href="mailto:${1:`g:myEmailAddress`}?subject=${2:feedback}">${3:email me}</a>
 snippet meta
 	<meta name="${1:name}" content="${2:content}"`Close()`>${3}
 snippet opt
@@ -188,3 +190,48 @@ snippet table
 	</table>${4}
 snippet textarea
 	<textarea name="${1:Name}" rows="${2:8}" cols="${3:40}">${4}</textarea>${5}
+snippet navsite
+	<span class="navlinks">
+		<a href="${1:../}index.html"${2: target="_parent"}><img src="/common/images/site.gif" alt="site home"></a>
+	</span>
+snippet navtopic
+	<span class="navlinks">
+		<a href="${1:../}index.html"${2: target="_parent"}><img src="/common/images/topic.gif" alt="topic home"></a>
+	</span>${3}
+snippet abbr
+	<abbr title="${2:expanded form}">${1:abbreviation}</abbr>${3}
+snippet acro
+	<acronym>${1:AYM}</acronym>${2}
+snippet acron
+	<acronym title="${2:expanded form}">${1:AYM}</acronym>${3}
+snippet ref
+	<a href="#ref${1:1}" class="reference">[$1]</a>${2}
+snippet references
+	<ol class="references">
+		${1}
+	</ol>
+snippet ref-target
+	<li id="ref${1:1}"> ${2} </li>${3}
+snippet note unlinked
+	<sup class="note">${1:1}</sup>${2}
+snippet note linked
+	<a href="#note${1:1}" class="note">${2:$1}</a>${3}
+snippet notes normal
+	<ol class="notes">
+		${1}
+	</ol>
+snippet notes fineprint
+	<ol class="fineprint">
+		${1}
+	</ol>
+snippet note-target
+	<li id="note${1:1}"> ${2} </li>${3}
+snippet cornify automatic on load
+		<script type="text/javascript" src="http://www.cornify.com/js/cornify.js"></script>
+		<script type="text/javascript">cornify_add();</script>
+snippet cornify button
+		<script type="text/javascript" src="http://www.cornify.com/js/cornify.js"></script>
+		<a href="http://www.cornify.com" onclick="cornify_add();return false;"><img src="http://www.cornify.com/assets/cornify.gif" width="61" height="16" border="0" alt="Cornify" /></a>
+snippet entry
+	<dt> <small>`ingo#date#format#International()`</small> <a href="${1:`(exists('b:entry') ? ft#html#PathConvert#AbsoluteToRelative(b:entry.urlFragment) : '???')`}"><b>${2:`(exists('b:entry') ? b:entry.title : 'title')`}</b></a> </dt>
+	<dd> ${3:`(exists('b:entry') ? b:entry.summary : 'summary')`} </dd>${4}`EvalExecute('unlet! b:entry')`

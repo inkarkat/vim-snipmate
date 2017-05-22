@@ -1,28 +1,460 @@
 # #!/bin/bash
 snippet #!
-	#!/bin/bash
-	
+	#!/bin/${1:ba}sh
+	${2}
+snippet #!source
+	#!/bin/${1:ba}sh source-this-script
+	${2}
+snippet rev
+	`getline('.') =~# '^\s*#\s*$' ? (getline('.') =~# '#\s\+$' ? '' : ' ') : '# '`Version: "@(#) $Revision$"
 snippet if
-	if [[ ${1:condition} ]]; then
+	if [ ${1:condition} ]; then
 		${2:#statements}
 	fi
 snippet elif
-	elif [[ ${1:condition} ]]; then
+	elif [ ${1:condition} ]; then
 		${2:#statements}
 snippet for
-	for (( ${2:i} = 0; $2 < ${1:count}; $2++ )); do
+	for ((${2:i} = 0; $2 < ${1:count}; $2++))
+	do
 		${3:#statements}
 	done
+snippet remove
+	for ((i = 0; i < \${#${1:array}[@]}; i++))
+	do
+		[ "\${$1[i]}" ${2:condition} ] && unset $1[i]
+	done
 snippet wh
-	while [[ ${1:condition} ]]; do
+	while ${1:condition}
+	do
 		${2:#statements}
 	done
 snippet until
-	until [[ ${1:condition} ]]; do
+	until ${1:condition}
+	do
 		${2:#statements}
 	done
+snippet wait
+	let attempts=1
+	until ${1:condition}
+	do
+		${2:#statements}
+		echo "${3:Not yet online} ($attempts)..."
+		sleep ${4:10}
+		let attempts+=1
+		if [ \$attempts -gt ${5:maxAttempts} ]; then
+			echo >2 "FATAL: ${6:subject} did not come up!"
+			${7:return} 1
+		fi
+	done
+	echo "$6 ready!"
+	[ \$attempts -gt 1 ] && echo "$6 is now ready!"
+	${8}
 snippet case
 	case ${1:word} in
 		${2:pattern})
 			${3};;
 	esac
+snippet case-grep-values
+	scriptFilespec="\$0"
+	case ${1:word} in
+		# ${2:MARKER}_BEGIN
+		${3}
+		# $2_END
+		*)	    echo >&2 "ERROR: No or invalid $2. Pass one of:"
+				sed -n -e '/^\s*# $2_BEGIN/,/^\s*# $2_END/s/^\s*\([^)]*\))\s*.*\$/\1/p' "\$scriptFilespec" >&2
+				exit 2
+				;;
+	esac
+snippet here pipe literal
+	(cat <<'${1:EOF}'
+		${2}
+	$1
+	) | ${3:cmd}
+snippet here pipe literal, leading tabs stripped
+	cat <<-'${1:EOF}'
+		${2}
+	$1
+	) | ${3:cmd}
+snippet here pipe parameter-expanded
+	cat <<${1:EOF}
+		${2}
+	$1
+	) | ${3:cmd}
+snippet here pipe parameter-expanded, leading tabs stripped
+	cat <<-${1:EOF}
+		${2}
+	$1
+	) | ${3:cmd}
+snippet here literal
+	${1:cat} <<'${2:EOF}'
+		${3}
+	$2${4}
+snippet here literal, leading tabs stripped
+	${1:cat} <<-'${2:EOF}'
+		${3}
+	$2${4}
+snippet here parameter-expanded
+	${1:cat} <<${2:EOF}
+		${3}
+	$2${4}
+snippet here parameter-expanded, leading tabs stripped
+	${1:cat} <<-${2:EOF}
+		${3}
+	$2${4}
+snippet pipe-stderr
+	(${1:command} 3>&1 1>&2 2>&3 | ${2:grep -v ANNOYING_ERRORS}) 3>&1 1>&2 2>&3 ${3:| grep TARGET_STRINGS}
+snippet default on empty or unset
+	: \${${1:variable}:=${2:default value}}${3}
+snippet default on unset
+	: \${${1:variable}=${2:default value}}${3}
+snippet default exported on empty or unset
+	: \${${1:variable}:=${2:default value}}; export $1${3}
+snippet default exported on unset
+	: \${${1:variable}=${2:default value}}; export $1${3}
+snippet cla-rcfile
+	[ -r ~/.${1:programname}rc ] && eval 'set -- "$@" ' $(cat ~/.$1rc)${2}
+snippet cla-helponly
+	printUsage()
+	{
+		cat <<HELPTEXT
+	${1:Short textual description.}
+	# Note: short followed by long option; if the user knows the short one, she can
+	# skim the long one.
+	HELPTEXT
+	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
+	}
+	case "\$1" in
+		--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
+	esac
+
+snippet cla-skeleton custom arguments
+	while [ $# -ne 0 ]
+	do
+		case "\$1" in
+			--help|-h|-\?)	shift; print`ingo#search#timelimited#IsBufferContains('printLongUsage') ? 'Long' : ''`Usage "\$0"; exit 0;;${1}
+			--)		shift; break;;
+			-*)		{ echo "ERROR: Unknown option \"\$1\"!"; echo; print`ingo#search#timelimited#IsBufferContains('printShortUsage') ? 'Short' : ''`Usage "\$0"; } >&2; exit 2;;
+			*)		break;;
+		esac
+	done
+	[ $# -eq 0 ] && { printUsage "\$0"; exit 2; }
+	if [ $# -ne 0 ]; then
+		files="$@"
+	fi
+	${2}
+snippet cla-skeleton eatargs
+	typeset -a allargs=()
+	while [ $# -ne 0 ]
+	do
+		case "\$1" in
+			--help|-h|-\?)	shift; print`ingo#search#timelimited#IsBufferContains('printLongUsage') ? 'Long' : ''`Usage "\$0"; exit 0;;${1}
+			--)		shift; break;;
+			*)		allargs+=("\$1")
+							shift
+							;;
+		esac
+	done
+	[ $# -eq 0 ] && { printUsage "\$0"; exit 2; }
+	if [ $# -ne 0 ]; then
+		files="$@"
+	fi
+	${1:echo} "${allargs[@]}"
+	${2}
+snippet cla-option
+	--${1:nofoo}${2:|-f})		shift; ${3:is}${4:$1}=t;;${5}
+snippet cla-param
+	--${1:foo}${2:|-f})		shift; ${3:$1}="\$1"; shift;;${4}
+snippet cla-param-multi
+	--${1:foo}${2:|-f})		shift; ${3:$1s}+=("\$1"); shift;;${4}
+snippet cla-verification
+	# Verify parsed arguments here.
+snippet allargs
+	typeset arg
+	typeset -a allargs=()
+	for arg
+	do
+		allargs+=("\$arg")
+	done
+	${1:echo} "${allargs[@]}"
+snippet cla-eatargs
+	typeset -a allargs=()
+	*)
+		allargs+=("\$1")
+		shift
+		;;
+	${1:echo} "${allargs[@]}"
+snippet cla-filterargs
+	typeset -a allargs=()
+	while [ $# -ne 0 ]
+	do
+		case "\$1" in
+			--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
+			--${1:filtered})	shift;;
+			*)
+				allargs+=("\$1")
+				shift
+				;;
+		esac
+	done
+	set -- "${allargs[@]}"
+	echo ${2:echo} "$@"
+snippet cla-printUsage
+	printUsage()
+	{
+		cat <<HELPTEXT
+	${1:Short textual description.}
+	HELPTEXT
+	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
+	}${4}
+snippet cla-simple-usage
+	printUsage()
+	{
+		cat <<HELPTEXT
+	${1:Short textual description.}
+	# Note: short followed by long option; if the user knows the short one, she can
+	# skim the long one.
+	HELPTEXT
+	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
+	}
+	case "\$1" in
+		--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
+	esac
+snippet cla-usage
+	printShortUsage()
+	{
+		cat <<SHORTHELPTEXT
+	# Note: short followed by long option; if the user knows the short one, she can
+	# skim the long one.
+	SHORTHELPTEXT
+	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
+	}
+	printUsage()
+	{
+		# This is the short help when launched with no or incorrect arguments.
+		# It is printed to stderr to avoid accidental processing.
+		printShortUsage "\$1" >&2
+		printf >&2 'Try %q --help for more information.\n' "$(basename "\$1")"
+	}
+	printLongUsage()
+	{
+		# This is the long "man page" when launched with the help argument.
+		# It is printed to stdout to allow paging with 'more'.
+		cat <<HELPDESCRIPTION
+	Short textual description.
+	HELPDESCRIPTION
+		echo
+		printShortUsage "\$1"
+		cat <<HELPTEXT
+	# Note: long followed by short option, so that the user is able to scan through
+	# the full names, then see the abbreviation.
+	# Note: Order options logically as in the short helptext; sort alphabetically if
+	# there are many options.
+		--foo|-f	Enables foo'ing with argument bar.
+	# Note: Multiline alternative if both short and long option do not fit.
+	#	--foo		Enables foo'ing with argument bar.
+	#	 -f			
+
+	Example:
+	HELPTEXT
+	printf '%q %s\n' "$(basename "\$1")" '--foo bar /tmp/foobar'
+	}
+snippet scriptDir Bash
+	readonly scriptDir=$([ "${BASH_SOURCE[0]}" ] && dirname -- "${BASH_SOURCE[0]}" || exit 3)
+	[ -d "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; exit 3; }
+snippet scriptDir Bash absolute filespec
+	readonly scriptDir=$([ "${BASH_SOURCE[0]}" ] && absoluteScriptFile="$(readlink -nf -- "${BASH_SOURCE[0]}")" && dirname -- "$absoluteScriptFile" || exit 3)
+	[ -d "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; exit 3; }
+snippet scriptDir Bash sourced script
+	_scriptDir=$([ "${BASH_SOURCE[0]}" ] && dirname -- "${BASH_SOURCE[0]}" || exit 3)
+	[ -d "$_scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; return 3; }
+	${0}
+	unset _scriptDir
+snippet scriptDir Posix absolute filespec
+	scriptDir=$(dirname -- "\$0")
+	[ "$scriptDir" = "." ] && scriptDir=$(dirname -- $(which -- "\$0")) || scriptDir=$(cd "$scriptDir" && printf '%s' "$PWD") || { echo >&2 "ERROR: Cannot determine absolute script dirspec!"; exit 3; }
+	[ -d "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; exit 3; }
+	readonly scriptDir
+snippet scriptName Bash
+	readonly scriptName=$(basename -- "\${BASH_SOURCE[0]}")
+snippet scriptName Posix
+	readonly scriptName=\$(basename -- "\$0")
+snippet scriptFilespec Bash
+	readonly scriptFilespec="${BASH_SOURCE[0]}"
+snippet scriptFilespec Posix absolute filespec
+	scriptDir=$(dirname -- "\$0")
+	[ "$scriptDir" = "." ] && scriptDir=$(dirname -- $(which -- "\$0")) || scriptDir=$(cd "$scriptDir" && printf '%s' "$PWD") || { echo >&2 "ERROR: Cannot determine absolute script dirspec!"; exit 3; }
+	[ -d "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; exit 3; }
+	readonly scriptFilespec="${scriptDir}/$0"
+	[ -e "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script filespec!"; exit 3; }
+snippet set-unsetVariables
+	set -u # Unset variables are fatal errors.
+snippet set-terminateOnError
+	set -e # Terminate the script at first error.
+snippet tempfile with script name
+	${1:TMPFILE}=$(mktemp --tmpdir "$(basename -- "\$0")-XXXXXX" 2>/dev/null || echo "${TEMP:-/tmp}/$(basename -- "\$0").$$$RANDOM")
+snippet tempfile with custom name
+	${1:TMPFILE}=$(mktemp --tmpdir "${2:prefix}-XXXXXX" 2>/dev/null || echo "${TEMP:-/tmp}/$2.$$$RANDOM")${3}
+snippet tempfile in custom dir
+	${1:TMPFILE}=$(mktemp --tmpdir="${2:dirspec}" "${3:XXXXXX}" 2>/dev/null || echo "${TEMP:-/tmp}/$2.$$$RANDOM")${3}
+snippet tempfile cleanup
+	cleanup()
+	{
+		rm -f "${1:$TMPFILE}" 2>/dev/null
+	}
+	[ "$DEBUG" ] || trap 'cleanup' EXIT
+snippet tempdir with script name
+	${1:TMPDIR}=$(mktemp --directory --tmpdir "$(basename -- "\$0")-XXXXXX" 2>/dev/null || echo "${TEMP:-/tmp}/$(basename -- "\$0").$$$RANDOM")
+snippet tempdir with custom name
+	${1:TMPDIR}=$(mktemp --directory --tmpdir "${2:prefix}-XXXXXX" 2>/dev/null || echo "${TEMP:-/tmp}/$2.$$$RANDOM")${3}
+snippet tempdir cleanup
+	cleanup()
+	{
+		rm -rf "${1:$TMPDIR}" 2>/dev/null
+	}
+	[ "$DEBUG" ] || trap 'cleanup' EXIT
+snippet cleanup
+	cleanup()
+	{
+		${1:cleanup-command} 2>/dev/null
+	}
+	[ "$DEBUG" ] || trap 'cleanup' EXIT
+snippet finally
+	finally()
+	{
+		${1:finally-command} 2>/dev/null
+	}
+	trap 'finally' EXIT
+snippet filter-backup
+	# Filter out backup files.
+	case "$(basename -- "$${1:file}")" in
+		*.[1-2][0-9][0-9][0-9][0-9][0-9][0-9][0-9][a-z])    continue;;
+	esac
+snippet filter-backup-glob
+	!(*.[1-2][0-9][0-9][0-9][0-9][0-9][0-9][0-9][a-z])
+snippet pipefail
+	set -o pipefail
+snippet noglob
+	set -o noglob
+snippet extglob
+	# Enable extended file pattern matching operators from ksh
+	# (?(pattern-list), !(pattern-list), ...) in Bash.
+	shopt -qs extglob
+snippet shopt-with-undo
+	# remember whether it was originally set, so we know whether to unset it
+	shopt -q ${1:option}; $1_set=\$?
+	# set if it wasn't originally set.
+	(($1_set)) && shopt -s $1
+	# Note, 0 (true) from shopt -q is "false" in a math context.
+
+	${2}
+	# unset if it wasn't originally set
+	(($1_set)) && shopt -u $1${3}
+snippet terminateOnError
+	set -e # Terminate the script at first error.
+snippet disableTerminateOnError
+		case \$- in
+			*e*)    set +e; local disabledTerminateOnError=t;;
+		esac
+		${1}
+		[ "\${disabledTerminateOnError:-}" ] && set -e${2}
+snippet terminateOnUnsetVar
+	set -u # Unset variables are fatal errors.
+snippet bash-versionguard
+	[ ${BASH_VERSINFO[0]} -ge ${1:4} ] || { echo >&2 "ERROR: This script requires Bash $1.0 or higher!"; exit 2; }${2}
+snippet shellquote all
+	shellquote()
+	{
+	    typeset -r qq=\\'; printf %s\\\\n "'\${1//\\'/\${qq}\\\\\${qq}\${qq}}'";
+	}
+snippet shellquote on demand
+	shellquote()
+	{
+		case "\$1" in
+			*[\$'\\\\ \`\'\"\n\r\t\v?*[]!+']*) typeset -r qq=\\'; printf %s\\\\n "'\${1//\\'/\${qq}\\\\\${qq}\${qq}}'";;
+			*)	printf %s\\\\n "\$1";;
+		esac
+	}
+snippet printquoted
+	printf ${1:>&2 }'%q ' "\${${2:ARGS}[@]}"; printf $1\\\\n
+snippet wordsplit into array
+	read -r -d '' -a ${2:words} <<<"\$${1:var}"
+	${3}"\${$2[@]}"${4}
+snippet wordsplit with for loop
+	read -r -d '' -a ${2:words} <<<"\$${1:var}"
+	for ${3:word} in "\${$2[@]}"; do
+		echo "\$$3"
+	done${4}
+snippet wordsplit with set -f in subshell
+	(
+		set -f
+		for ${2:word} in \$${1:var}; do
+			echo "$2"
+		done
+	)${3}
+snippet debug
+	case ",\${DEBUG}," in *,${1:`expand('%:t:r')`},*) ${2:debug-commands};; esac${3}
+snippet profile
+	case ",${PROFILING}," in *,${1:`expand('%:t:r')`},*) date +%S.%N; ${2:echo "$BASH_SOURCE[0]"};; esac${3}
+snippet callable
+	type -t ${1:name} >/dev/null${2}
+snippet exists
+	which ${1:name} > /dev/null 2>&1${2}
+snippet timestamp
+	${1:timestamp}=$(date +%s)${2}
+snippet array-unique
+	${1:list}=(\$(tr ' ' '\n' <<< "\${$1[@]}" | sort -u | tr '\n' ' '))${2}
+snippet random
+	$(($RANDOM % ${1:upperBoundExclusive}))
+snippet random-half
+	[ $(($RANDOM % 2)) -eq 0 ]
+snippet map
+	typeset -a $3=()
+	for ${1:i} in "\${${2:source}[@]}"
+	do
+		${3:target}+=("\$(${4:command} "\$$1")")
+	done
+	${5}
+snippet filter
+	typeset -a $3=()
+	for ${1:i} in "\${${2:source}[@]}"
+	do
+		${4:command} "\$$1" && ${3:target}+=("\$$1")
+	done
+	${5}
+snippet reduce
+	typeset $4=${1:startValue}
+	for ${2:i} in "\${${3:source}[@]}"
+	do
+		${4:accumulator}="\$(${5:command} "\$$4" "\$$2")"
+	done
+	${6}
+snippet lastArg simplistic, defaulting to program name
+	${1:lastArg}=\${!#}${2}
+snippet lastArg with empty value if no arguments
+	${1:lastArg}=; [ $# -gt 0 ] && $1=\${!#}${2}
+snippet lastArg all except last
+	"\${@:1:\$((\$#-1))}"
+snippet all-except-last
+	"\${${1:var}[@]:1:\$((\${#$1[@]}-1))}"${2}
+snippet lastElements empty when not enough
+	\${${1:array}[@]: -${2:N}}${3}
+snippet lastElements as many as possible when not enough
+	let ${3:cnt}="\${#${1:array}[@]} > ${2:N} ? $2 : \${#$1[@]}"
+	${4}\${$1[@]: -\$$3}${5}
+snippet less
+	less --RAW-CONTROL-CHARS
+snippet field
+	awk ${1:-F FS }'{ print \$${2:nr} }'${3}
+snippet keep-status
+	status=\$?
+	${1:command}
+	exit \$status
+snippet defined
+	[ -n "\${${1:variable}+t}" ]${2}
+snippet confirm
+	read -p "${1:Question}? (y/n) " choice
+	${2}[ "$choice" = 'y' ]${3}
+snippet confirm with timeout
+	read -t ${1:seconds} -p "${2:Question}? (y/n) " choice
+	${3}[ "$choice" = 'y' ]${4}

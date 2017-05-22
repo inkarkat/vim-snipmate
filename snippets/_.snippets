@@ -1,7 +1,36 @@
 # Global snippets
 
-# (c) holds no legal value ;)
-snippet c)
-	Copyright `&enc[:2] == "utf" ? "©" : "(c)"` `strftime("%Y")` ${1:`g:snips_author`}. All Rights Reserved.${2}
+snippet (C)
+	`&enc[:2] == "utf" ? "©" : "(C)"` Copyright `strftime("%Y")` ${1:`g:myFullName`}. All Rights Reserved.${2}
+snippet gpl
+	Copyright: (C) `strftime('%Y')` ${1:`g:myFullName`}
+	  This program is free software; you can redistribute it and/or modify it
+	  under the terms of the GNU General Public License.
+	  See http://www.gnu.org/copyleft/gpl.txt
 snippet date
 	`strftime("%Y-%m-%d")`
+snippet email
+	`g:myEmailAddress`
+snippet name&email
+	`g:myFullName` <${1:`g:myEmailAddress`}>${2}
+snippet author
+	${2}Author:	`g:myFullName` <${1:`g:myEmailAddress`}>${3}
+snippet maintainer
+	${2}Maintainer:	`g:myFullName` <${1:`g:myEmailAddress`}>${3}
+snippet what
+	`WhatString#Generate(exists('b:product') ? b:product : '${1:tools}')`
+snippet So
+	Stack Overflow
+snippet Vim
+	Vim version `Version()`
+# grawlix, obscenicon, symbol swearing, cp. http://english.stackexchange.com/questions/86838/what-the-is-that-called
+snippet fuck
+	%&*#
+snippet fucking
+	%&*#ing
+snippet Hex
+	Hexadecimal
+snippet hex
+	hexadecimal
+snippet Lorem
+	Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat.
