@@ -90,8 +90,16 @@ fun s:ProcessFile(file, ft, ...)
 endf
 
 fun! ExtractSnipsFile(file, ft)
-	if !filereadable(a:file) | return | endif
-	let text = readfile(a:file)
+	if filereadable(a:file)
+		let l:file = a:file
+	else
+		let l:file = get(ingo#compat#globpath(g:snippets_dir, a:file, 1, 1), 0, '')
+		if ! filereadable(l:file)
+			return
+		endif
+	endif
+
+	let text = readfile(l:file)
 	let inSnip = 0
 	for line in text + ["\n"]
 		if inSnip && (line[0] == "\t" || line == '')
