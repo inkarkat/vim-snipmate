@@ -183,6 +183,10 @@ snippet regexp-unescaped
 	\\%(\\%(^\\|[^\\\\]\\)\\%(\\\\\\\\\\)*\\\\\\)\\@<!${1: }
 snippet regexp-escaped
 	\\%(\\%(^\\|[^\\\\]\\)\\%(\\\\\\\\\\)*\\\\\\)\\@<!\\\\${1:x}
+snippet regexp-ascii 7bit
+	[\x00-\x7F]
+snippet regexp-ascii 8bit
+	[\x00-\xFF]
 snippet indenttest
 	catch /bla/	${1:one tab}after it
 		lalaal	${2:more}	and more
