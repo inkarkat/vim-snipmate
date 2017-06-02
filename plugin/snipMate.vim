@@ -42,7 +42,7 @@ endf
 let s:snippets = {} | let s:multi_snips = {}
 
 if !exists('snippets_dir')
-	let snippets_dir = substitute(globpath(&rtp, 'snippets/'), "\n", ',', 'g')
+	let snippets_dir = join(map(split(globpath(&rtp, 'snippets/'), "\n"), 'escape(v:val[0:-2], ",")'), ',')
 endif
 fun! s:Scope( scope )
 	return (empty(a:scope) ? '_empty' : a:scope)
