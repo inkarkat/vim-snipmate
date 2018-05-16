@@ -19,11 +19,19 @@ snippet for
 	do
 		${3:#statements}
 	done
-snippet remove
+snippet remove unset
 	for ((i = 0; i < \${#${1:array}[@]}; i++))
 	do
 		[ "\${$1[i]}" ${2:condition} ] && unset $1[i]
 	done
+snippet remove fully
+	typeset -a $2Copy=()
+	typeset ${1:element}
+	for $1 in "\${${2:array}[@]}"
+	do
+		[ "\$$1" ${3:condition} ] || $2Copy+=("\$$1")
+	done
+	$2=("\${$2Copy[@]}"); unset $2Copy; unset $1
 snippet wh
 	while ${1:condition}
 	do
@@ -103,17 +111,17 @@ snippet here pipe literal
 	$1
 	) | ${3:cmd}
 snippet here pipe literal, leading tabs stripped
-	cat <<-'${1:EOF}'
+	(cat <<-'${1:EOF}'
 		${2}
 	$1
 	) | ${3:cmd}
 snippet here pipe parameter-expanded
-	cat <<${1:EOF}
+	(cat <<${1:EOF}
 		${2}
 	$1
 	) | ${3:cmd}
 snippet here pipe parameter-expanded, leading tabs stripped
-	cat <<-${1:EOF}
+	(cat <<-${1:EOF}
 		${2}
 	$1
 	) | ${3:cmd}
@@ -192,8 +200,24 @@ snippet cla-skeleton eatargs
 	if [ $# -ne 0 ]; then
 		files="$@"
 	fi
-	${1:echo} "${allargs[@]}"
-	${2}
+	${2:echo} "\${allargs[@]}"
+	${3}
+snippet cla-skeleton wrapperargs
+	typeset -a ${1:wrapperargs}=()
+	while [ $# -ne 0 ]
+	do
+		case "\$1" in
+			-[${2:AaCfGgKVvXxYy_options}]*)	$1+=("\$1"); shift;;
+			--@(${4:all|version_long_options}))	$1+=("\$1"); shift;;
+			-[${3:bcDEeFIiLlmOopQRSWw_params}])	$1+=("\$1" "\$2"); shift; shift;;
+			--@(${5:foo|bar_long_params}))	$1+=("\$1" "\$2"); shift; shift;;
+			--help|-h|-\?)	shift; print`ingo#search#timelimited#IsBufferContains('printLongUsage') ? 'Long' : ''`Usage "\$0"; exit 0;;
+			--)		shift; break;;
+			*)		break;;
+		esac
+	done
+	${6:echo} "\${$1[@]}" -- "$@"
+	${7}
 snippet cla-option
 	--${1:nofoo}${2:|-f})		shift; ${3:is}${4:$1}=t;;${5}
 snippet cla-param
@@ -364,8 +388,12 @@ snippet cleanup with function
 		${1:cleanup-command} 2>/dev/null
 	}
 	[ "$DEBUG" ] || trap 'cleanup' EXIT
-snippet cleanup subshell processes
-	trap "kill 0" EXIT  # Kill subshell processes when the script exits.
+snippet cleanup any spawned subshell processes
+	trap "kill -- -$$" EXIT  # Kill subshell processes when the script exits.
+snippet cleanup remaining jobs
+	trap "jobs -p | xargs kill --" EXIT  # Kill remaining jobs when the script exits.
+snippet cleanup all processes withing the same process group
+	trap "kill 0" EXIT  # Kill processes from the same process group (includes invoking scripts!) when the script exits.
 snippet finally
 	finally()
 	{
@@ -419,6 +447,52 @@ snippet bash-version above version
 	[ "\${BASH_VERSINFO:-}" ] && [ \( \${BASH_VERSINFO[0]} -eq ${1:4} -a \${BASH_VERSINFO[1]} -ge ${2:0} \) -o \${BASH_VERSINFO[0]} -gt $1 ]${3}
 snippet bash-version below version
 	[ "\${BASH_VERSINFO:-}" ] && [ \( \${BASH_VERSINFO[0]} -eq ${1:4} -a \${BASH_VERSINFO[1]} -le ${2:0} \) -o \${BASH_VERSINFO[0]} -lt $1 ]${3}
+snippet execute a single command with arguments in array
+	"${${1:commandLine[@]}}"${2}
+snippet execute array or remaining arguments as shell command-line
+	commandLineEscape()
+	{
+		eval "typeset -a result=(\\"\\${\${1:?}[@]}\\")"
+		typeset escapeChars="\\\\${IFS-$' \\t\\n'}"
+		typeset escapeCharIdx
+		for ((escapeCharIdx = 0; escapeCharIdx < ${#escapeChars}; escapeCharIdx++))
+		do
+			result=("${result[@]//"${escapeChars:$escapeCharIdx:1}"/\\\\"${escapeChars:$escapeCharIdx:1}"}")
+		done
+		eval "\${1}Escaped=(\\"\\${result[@]}\\")"
+	}
+	typeset -a ${1:commandLine}=("$@")
+	commandLineEscape $1
+	eval "${$1Escaped[@]}"${2}
+snippet execute command line(s) as separate or remaining arguments
+	# [-c|--command "FOO|BAR" | [--] SIMPLECOMMAND [...]] [...]
+	isNeedEval=
+	typeset -a commands=()
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+			--command|-c)		shift; commands+=(${commands:+;} "$1"); isNeedEval=t; shift;;
+		esac
+	done
+	if [ $# -ne 0 ]; then
+		if [ "$isNeedEval" ]; then
+			# Combine --command and SIMPLECOMMAND; need to quote SIMPLECOMMAND to
+			# undo the effects of eval.
+			commands+=(${commands:+;} $(printf '%q ' "$@"))
+		else
+			commands=("$@")
+		fi
+	fi
+	if [ "$isNeedEval" ]; then
+		eval "${commands[@]}"
+	else
+		"${commands[@]}"
+	fi
+snippet execute command lines from stdin
+	while IFS=$'\\n' read -r command
+	do
+		eval "$command"
+	done
 snippet shellquote all
 	shellquote()
 	{
@@ -499,6 +573,8 @@ snippet lastArg all except last
 snippet lastArg split off last
 	${1:lastArg}=; [ \$# -gt 0 ] && $1=\${!#}
 	typeset -a ${2:otherArgs}=("\${@:1:\$((\$#-1))}")${3}
+snippet lastArg second-to-last
+	${@:(-2):1}
 snippet all-except-last
 	"\${${1:var}[@]:1:\$((\${#$1[@]}-1))}"${2}
 snippet lastElements empty when not enough
@@ -510,12 +586,34 @@ snippet less
 	less --RAW-CONTROL-CHARS
 snippet pager
 	"${PAGER:-less}" --RAW-CONTROL-CHARS
+snippet pager-conditional
+	typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS)
+	while [ $# -ne 0 ]
+	do
+		case "$1" in
+		--help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+		--no-pager)	shift; pager=();;
+		--)		shift; break;;
+		esac
+	done
+	${1:some condition && }pager=()
+	${2:more commands | }eval '${3:lastPipeCommand}' "${pager:+|}" '"${pager[@]}"'${4}
+snippet pipe-conditional
+	typeset -a ${1:cond}=(${2:conditional pipe commands})
+	typeset -a $1=()
+	${3:more commands | }eval '${4:lastPipeCommand}' "${$1:+|}" '"${$1[@]}"'${5}
 snippet field
 	awk ${1:-F FS }'{ print \$${2:nr} }'${3}
 snippet keep-status
 	status=\$?
 	${1:command}
 	exit \$status
+snippet status-union
+	status=0
+	${1:loop}
+		${2:command} || status=$?
+	${3:endloop}
+	exit $status
 snippet defined
 	[ -n "\${${1:variable}+t}" ]${2}
 snippet confirm
@@ -531,7 +629,7 @@ snippet query into array
 snippet toterm
 	[ -t 1 ]
 snippet alias enable subcommands
-	# Allow definition of ${2:$1} aliases putting an executable "$1-foo"
+	# Allow definition of ${2:$1} aliases putting an executable / alias "$1-foo"
 	# somewhere in the PATH.
 	exists ${1:command} && $1() {
 		typeset -r $1Alias="$1-$1"
@@ -539,7 +637,7 @@ snippet alias enable subcommands
 			$1 ${${3:$1}_DEFAULT_COMMAND:-${4:default-arg}}
 		elif type -t "$$1Alias" >/dev/null; then
 			shift
-			"$$1Alias" "$@"
+			eval $$1Alias '"$@"'
 		else
 			command $1 "$@"
 		fi
@@ -550,3 +648,16 @@ snippet file-older
 	[ "$(find "${1:\$filespec}" -mmin +${2:minutes})" ]${3}
 snippet file-newer
 	[ "$(find "${1:\$filespec}" -mmin -${2:minutes})" ]${3}
+snippet contains
+	contains()
+	{
+		needle=\$1
+		shift
+		for elem
+		do
+		[ "$needle" = "$elem" ] && return 0
+		done
+		return 1
+	}
+snippet plural
+	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}
