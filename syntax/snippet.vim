@@ -2,7 +2,7 @@
 " Hopefully this should make snippets a bit nicer to write!
 syn match snipComment '^#.*'
 syn match placeHolder '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\${\d\+\(:.\{-}\)\=}' contains=snipCommand
-syn match tabStop '\$\d\+'
+syn match tabStop '\%(\%(^\|[^\\]\)\%(\\\\\)*\\\)\@<!\$\d\+'
 syn match snipCommand '`.\{-}`'
 syn match snippet '^snippet.*' transparent contains=multiSnipText,snipKeyword
 syn match multiSnipText '\S\+ \zs.*' contained
