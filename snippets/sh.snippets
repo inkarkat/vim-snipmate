@@ -450,10 +450,10 @@ snippet bash-version below version
 snippet execute a single command with arguments in array
 	"${${1:commandLine[@]}}"${2}
 snippet execute command line(s) as separate or remaining arguments
-	# [-c|--command "COMMANDLINE" | [--] SIMPLECOMMAND [...]] [...]
+	# -c|--command "COMMANDLINE" [-c ...] | [--] SIMPLECOMMAND [...]
 	--command|-c CMD	The command line to be executed. When this is a simple
 			command, it can also be passed as such.
-
+	${1}
 	isNeedEval=
 	typeset -a commands=()
 	while [ $# -ne 0 ]
@@ -461,6 +461,7 @@ snippet execute command line(s) as separate or remaining arguments
 		case "\$1" in
 			--command|-c)		shift; commands+=(${commands:+;} "\$1"); isNeedEval=t; shift;;
 			--)		shift; break;;
+			-*)		{ echo "ERROR: Unknown option \"\$1\"!"; echo; print`ingo#search#timelimited#IsBufferContains('printShortUsage') ? 'Short' : ''`Usage "\$0"; } >&2; exit 2;;
 			*)		break;;
 		esac
 	done
@@ -473,11 +474,16 @@ snippet execute command line(s) as separate or remaining arguments
 			commands=("$@")
 		fi
 	fi
+	if [ ${#commands[@]} -eq 0 ]; then
+		echo >&2 'ERROR: No COMMAND(s) specified; need to pass -c|--command "COMMANDLINE", or SIMPLECOMMAND.'
+		exit 2
+	fi
+	${2}
 	if [ "$isNeedEval" ]; then
 		eval "${commands[@]}"
 	else
 		"${commands[@]}"
-	fi
+	fi${3}
 snippet execute command lines from stdin
 	while IFS=$'\\n' read -r command
 	do
