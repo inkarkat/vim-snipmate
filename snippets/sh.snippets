@@ -42,10 +42,10 @@ snippet until
 	do
 		${2:#statements}
 	done
-snippet select
+snippet select skeleton
 	select ${1:variable} in ${2:words}
 	do
-		if [ "$1" ]; then
+		if [ "\$$1" ]; then
 			${3:#statements}
 			break
 		elif [ "\$REPLY" = ${4:default} ]; then
@@ -53,6 +53,76 @@ snippet select
 			break
 		fi
 	done${6}
+snippet select single entry with help
+	select ${1:variable} in ${2:words}
+	do
+		if [ "\$$1" ]; then
+			${3:#statements}
+			break
+		elif [ ! "\$REPLY" ]; then
+			exit 1
+		else
+			cat >&2 <<-'EOF'
+				Enter a number to select the ${4:entry}.
+				Abort via Ctrl-D.
+	EOF
+		fi
+	done${5}
+snippet select single entry with drill-down
+	select ${1:variable} in ${2:words}
+	do
+		if [ "\$$1" ]; then
+			${3:#statements}
+			break
+		elif [ ! "\$REPLY" ]; then
+			exit 1
+		elif [ "\$REPLY" = '?' ]; then
+			cat >&2 <<-'EOF'
+				Enter a number to select the ${4:entry}.
+				Filter the list by entering "grep" arguments. (Double backslashes.)
+				Abort via Ctrl-D.
+	EOF
+		else
+			typeset -a filtered$2=($(printf '%s\n' "\$$2" | grep $REPLY))
+			${5:function} "${filtered$2[@]}"
+			break
+		fi
+	done${6}
+snippet select multiple entries with help
+	typeset -a selected$2=()
+	select ${1:variable} in ${2:words}
+	do
+		if [ "\$$1" ]; then
+			selected$2+=("\$$1")
+		elif [ "\$REPLY" = '.' ]; then
+			break
+		else
+			cat >&2 <<-'EOF'
+				Enter each number (one after the other) to select the ${3:entry}.
+				Conclude by pressing Ctrl-D or entering "."
+	EOF
+		fi
+	done${4}
+snippet select multiple entries with drill-down
+	typeset -a selected$2=()
+	select ${1:variable} in ${2:words}
+	do
+		if [ "\$$1" ]; then
+			selected$2+=("\$$1")
+		elif [ "\$REPLY" = '.' ]; then
+			break
+		else
+			cat >&2 <<-'EOF'
+				Enter each number (one after the other) to select the ${3:entry}.
+				Filter the list by entering "grep" arguments. (Double backslashes.)
+				Conclude by pressing Ctrl-D or entering "."
+	EOF
+		else
+			typeset -a filtered$2=($(printf '%s\n' "\$$2" | grep $REPLY))
+			${5:function} "${filtered$2[@]}"
+			break
+		fi
+	done${4}
 snippet wait
 	let attempts=1
 	until ${1:condition}
