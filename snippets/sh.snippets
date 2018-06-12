@@ -233,7 +233,7 @@ snippet cla-helponly
 	# Note: short followed by long option; if the user knows the short one, she can
 	# skim the long one.
 	HELPTEXT
-	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
+		printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
 	}
 	case "\$1" in
 		--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
@@ -326,14 +326,6 @@ snippet cla-filterargs
 	done
 	set -- "${allargs[@]}"
 	echo ${2:echo} "$@"
-snippet cla-printUsage
-	printUsage()
-	{
-		cat <<HELPTEXT
-	${1:Short textual description.}
-	HELPTEXT
-	printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
-	}${4}
 snippet cla-usage simple
 	printUsage()
 	{
@@ -344,9 +336,6 @@ snippet cla-usage simple
 	HELPTEXT
 		printf 'Usage: %q %s\n' "$(basename "\$1")" '${2:[-f|--foo bar]} ${3:[FILE, ...]} [-?|-h|--help]'
 	}
-	case "\$1" in
-		--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
-	esac
 snippet cla-usage short and long
 	printShortUsage()
 	{
