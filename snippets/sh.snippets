@@ -473,14 +473,14 @@ snippet noglob
 snippet extglob
 	shopt -qs extglob${1: # Enable extended file pattern matching operators from ksh (?(pattern-list), !(pattern-list), ...) in Bash.}${2}
 snippet shopt-with-undo
-	# remember whether it was originally set, so we know whether to unset it
+	# Remember whether it was originally set, so we know whether to unset it.
 	shopt -q ${1:option}; $1_set=\$?
-	# set if it wasn't originally set.
+	# Set if it wasn't originally set.
 	(($1_set)) && shopt -s $1
-	# Note, 0 (true) from shopt -q is "false" in a math context.
+	# Note: 0 (true) from shopt -q is "false" in a math context.
 
 	${2}
-	# unset if it wasn't originally set
+	# Unset if it wasn't originally set.
 	(($1_set)) && shopt -u $1${3}
 snippet terminateOnError
 	set -e # Terminate the script at first error.
