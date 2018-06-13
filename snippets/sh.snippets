@@ -722,16 +722,5 @@ snippet file-older
 	[ "$(find "${1:\$filespec}" -mmin +${2:minutes})" ]${3}
 snippet file-newer
 	[ "$(find "${1:\$filespec}" -mmin -${2:minutes})" ]${3}
-snippet contains
-	contains()
-	{
-		needle=\$1
-		shift
-		for elem
-		do
-		[ "$needle" = "$elem" ] && return 0
-		done
-		return 1
-	}
 snippet plural
 	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}
