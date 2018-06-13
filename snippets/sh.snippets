@@ -471,9 +471,7 @@ snippet pipefail
 snippet noglob
 	set -o noglob
 snippet extglob
-	# Enable extended file pattern matching operators from ksh
-	# (?(pattern-list), !(pattern-list), ...) in Bash.
-	shopt -qs extglob
+	shopt -qs extglob${1: # Enable extended file pattern matching operators from ksh (?(pattern-list), !(pattern-list), ...) in Bash.}${2}
 snippet shopt-with-undo
 	# remember whether it was originally set, so we know whether to unset it
 	shopt -q ${1:option}; $1_set=\$?
