@@ -688,6 +688,8 @@ snippet status-union
 	exit $status
 snippet defined
 	[ -n "\${${1:variable}+t}" ]${2}
+snippet defined-and-empty
+	[ -n "\${${1:variable}+t}" -a -z "$1" ]${2}
 snippet confirm
 	read -p "${1:Question}? (y/n) " choice
 	${2}[ "$choice" = 'y' ]${3}
