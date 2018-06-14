@@ -670,10 +670,14 @@ snippet pager-conditional
 	done
 	${1:some condition && }pager=()
 	${2:more commands | }eval '${3:lastPipeCommand}' "${pager:+|}" '"${pager[@]}"'${4}
-snippet pipe-conditional
-	typeset -a ${1:cond}=(${2:conditional pipe commands})
-	typeset -a $1=()
+snippet pipe-conditional single pipeline with individual arguments
+	typeset -a ${1:conditionPipeline}=()
+	typeset -a $1=(${2:conditional pipe commands})
 	${3:more commands | }eval '${4:lastPipeCommand}' "${$1:+|}" '"${$1[@]}"'${5}
+snippet pipe-conditional pipeline(s) as quoted string
+	${1:conditionPipeline}=
+	$1='${2:conditional pipeline(s)}'
+	${3:more commands | }eval '${4:lastPipeCommand}' "${$1:+|}\$$1"${5}
 snippet field
 	awk ${1:-F FS }'{ print \$${2:nr} }'${3}
 snippet keep-status
