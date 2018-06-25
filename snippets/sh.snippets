@@ -152,14 +152,14 @@ snippet case-grep-values simple
 		${3}
 		# $2_END
 		*)	    echo >&2 "ERROR: No or invalid $2. Pass one of:"
-				sed -n -e '/^\s*# $2_BEGIN/,/^\s*# $2_END/s/^\s*\([^)]*\))\s*.*\$/\1/p' "\$scriptFilespec" >&2
+				sed -n -e '/^\s*# $2_BEGIN/,/^\s*# $2_END/s/^\s*\([^) ]*\))\s*.*\$/\1/p' "\$scriptFilespec" >&2
 				exit 2
 				;;
 	esac
 snippet case-grep-values invalid vs none and separate function
 	get$2s()
 	{
-		sed -n -e '/^\s*# $2_BEGIN/,/^\s*# $2_END/s/^\s*\([^)]*\))\s*.*\$/\1/p' "\$scriptFilespec" >&2
+		sed -n -e '/^\s*# $2_BEGIN/,/^\s*# $2_END/s/^\s*\([^) ]*\))\s*.*\$/\1/p' "\$scriptFilespec" >&2
 	}
 	scriptFilespec="\$0"
 	case ${1:word} in
