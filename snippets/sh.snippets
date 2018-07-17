@@ -610,6 +610,10 @@ snippet exists
 	which ${1:name} > /dev/null 2>&1${2}
 snippet timestamp
 	${1:timestamp}=$(date +%s)${2}
+snippet epochToDate
+	date --date "@${1:$epoch}"${2: +%F\ %T}${3}
+snippet dateToEpoch
+	date --date "${1:$date}" +%s${2}
 snippet array-unique
 	${1:list}=(\$(tr ' ' '\n' <<< "\${$1[@]}" | sort -u | tr '\n' ' '))${2}
 snippet array-sorted
