@@ -602,6 +602,10 @@ snippet debug
 	case ",\${DEBUG}," in *,${1:`expand('%:t:r')`},*) ${2:debug-commands};; esac${3}
 snippet profile
 	case ",${PROFILING}," in *,${1:`expand('%:t:r')`},*) date +%S.%N; ${2:echo "$BASH_SOURCE[0]"};; esac${3}
+snippet assert just message
+	echo >&2 'ASSERT: ${1:Invalid whatever}'; exit 2${2}
+snippet assert with value
+	printf >&2 'ASSERT: ${1:Invalid action}: %s\n' "$${2:action}"; exit 2${3}
 snippet callable Bash
 	type -t ${1:name} >/dev/null${2}
 snippet callable Posix
@@ -610,6 +614,8 @@ snippet exists
 	which ${1:name} > /dev/null 2>&1${2}
 snippet timestamp
 	${1:timestamp}=$(date +%s)${2}
+snippet now
+	${1:now=}$(date +%s)${2}
 snippet epochToDate
 	date --date "@${1:$epoch}"${2: +%F\ %T}${3}
 snippet dateToEpoch
