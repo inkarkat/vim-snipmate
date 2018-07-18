@@ -581,8 +581,18 @@ snippet shellquote on demand
 			*)	printf %s\\\\n "\$1";;
 		esac
 	}
-snippet printquoted
-	printf ${1:>&2 }'%q ' "\${${2:ARGS}[@]}"; printf $1\\\\n
+snippet printquoted arguments: simplistic, with trailing space
+	printf ${1:>&2 }'%q ' "$@"; printf $1'\\n'${2}
+snippet printquoted array: simplistic, with trailing space
+	printf ${1:>&2 }'%q ' "${${2:ARGS}[@]}"; printf $1'\\n'${3}
+snippet printquoted arguments: at least one argument exists
+	printf ${1:>&2 }'%q' "\$1"; printf $1' %q' "${@:2}"; printf $1'\\n'${2}
+snippet printquoted array: at least one argument exists
+	printf ${1:>&2 }'%q' "${${2:ARGS}[0]}"; printf $1' %q' "${$2[@]:1}"; printf $1'\\n'${3}
+snippet printquoted arguments: with check
+	[ $# -gt 0 ] && printf ${1:>&2 }'%q' "\$1"; [ $# -gt 1 ] && printf $1' %q' "${@:2}"; printf $1'\\n'${2}
+snippet printquoted array: with check
+	[ ${#${2:ARGS}[@]} -gt 0 ] && printf ${1:>&2 }'%q' "${$2[0]}"; [ ${#$2[@]} -gt 1 ] && printf $1' %q' "${$2[@]:1}"; printf $1'\\n'${3}
 snippet wordsplit into array
 	read -r -d '' -a ${2:words} <<<"\$${1:var}"
 	${3}"\${$2[@]}"${4}
