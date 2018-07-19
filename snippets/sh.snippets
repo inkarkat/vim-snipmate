@@ -285,11 +285,28 @@ snippet cla-skeleton wrapperargs
 			-[${3:bcDEeFIiLlmOopQRSWw_params}])	$1+=("\$1" "\$2"); shift; shift;;
 			--@(${5:foo|bar_long_params}))	$1+=("\$1" "\$2"); shift; shift;;
 			--help|-h|-\?)	shift; print`ingo#search#timelimited#IsBufferContains('printLongUsage') ? 'Long' : ''`Usage "\$0"; exit 0;;
-			--)		shift; break;;
+			--)		$1+=("\$1"); break;;
 			*)		break;;
 		esac
 	done
-	${6:echo} "\${$1[@]}" -- "$@"
+	${6:echo} "\${$1[@]}" "$@"
+	${7}
+snippet cla-skeleton wrapperargs that support --long-form=value
+	typeset -a ${1:wrapperargs}=()
+	while [ $# -ne 0 ]
+	do
+		case "\$1" in
+			-[${2:AaCfGgKVvXxYy_options}]*)	$1+=("\$1"); shift;;
+			--@(${4:all|version_long_options}))	$1+=("\$1"); shift;;
+			-[${3:bcDEeFIiLlmOopQRSWw_params}])	$1+=("\$1" "\$2"); shift; shift;;
+			--@($5)=*)	$1+=("\$1"); shift;;
+			--@(${5:foo|bar_long_params}))	$1+=("\$1" "\$2"); shift; shift;;
+			--help|-h|-\?)	shift; print`ingo#search#timelimited#IsBufferContains('printLongUsage') ? 'Long' : ''`Usage "\$0"; exit 0;;
+			--)		$1+=("\$1"); break;;
+			*)		break;;
+		esac
+	done
+	${6:echo} "\${$1[@]}" "$@"
 	${7}
 snippet cla-option
 	--${1:nofoo}${2:|-f})		shift; ${3:is}${4:$1}=t;;${5}
