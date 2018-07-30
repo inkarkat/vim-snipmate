@@ -5,6 +5,8 @@ snippet #!
 snippet #!source
 	#!/bin/${1:ba}sh source-this-script
 	${2}
+snippet @@
+	"${${1:array}[@]}"${2}
 snippet rev
 	`getline('.') =~# '^\s*#\s*$' ? (getline('.') =~# '#\s\+$' ? '' : ' ') : '# '`Version: "@(#) $Revision$"
 snippet if
