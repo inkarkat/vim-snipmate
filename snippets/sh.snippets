@@ -252,7 +252,10 @@ snippet cla-skeleton custom arguments
 			*)		break;;
 		esac
 	done
-	[ $# -eq 0 ] && { printUsage "\$0"; exit 2; }
+	if [ $# -eq 0 ]; then
+		printUsage "\$0"
+		exit 2
+	fi
 	if [ $# -ne 0 ]; then
 		files="$@"
 	fi
@@ -269,7 +272,10 @@ snippet cla-skeleton eatargs
 							;;
 		esac
 	done
-	[ $# -eq 0 ] && { printUsage "\$0"; exit 2; }
+	if [ $# -eq 0 ]; then
+		printUsage "\$0"
+		exit 2
+	fi
 	if [ $# -ne 0 ]; then
 		files="$@"
 	fi
