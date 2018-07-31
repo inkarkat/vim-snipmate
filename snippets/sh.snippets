@@ -778,3 +778,19 @@ snippet file-newer
 	[ "$(find "${1:\$filespec}" -mmin -${2:minutes})" ]${3}
 snippet plural
 	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}
+# https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
+snippet xdg config home with initialization
+	readonly CONFIG_DIRSPEC=${XDG_CONFIG_HOME:-~/.config}/${1:`expand('%:t:r')`}
+	[ -d "$CONFIG_DIRSPEC" ] || mkdir -p -- "$CONFIG_DIRSPEC" || { printf >&2 'ERROR: Could not initialize configuration store at %s!\n' "$CONFIG_DIRSPEC"; exit 3; }${2}
+snippet xdg user specific configuration files
+	${XDG_CONFIG_HOME:-~/.config}
+snippet xdg preference-ordered :-separated set of base directories to search for configuration files in addition to the $XDG_CONFIG_HOME base directory
+	${XDG_CONFIG_DIRS:-/etc/xdg}
+snippet xdg user specific data files
+	${XDG_DATA_HOME:-~/.local/share}
+snippet xdg preference-ordered :-separated set of base directories to search for data files in addition to the $XDG_DATA_HOME base directory
+	${XDG_DATA_DIRS:-/usr/local/share/:/usr/share/}
+snippet xdg user specific non-essential data files
+	${XDG_CACHE_HOME:-~/.cache}
+snippet xdg base directory relative to which user-specific non-essential runtime files and other file objects (such as sockets, named pipes, ...) should be stored. The directory MUST be owned by the user, and he MUST be the only one having read and write access to it
+	${XDG_RUNTIME_DIR}
