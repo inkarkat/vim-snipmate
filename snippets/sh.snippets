@@ -777,7 +777,11 @@ snippet file-older
 snippet file-newer
 	[ "$(find "${1:\$filespec}" -mmin -${2:minutes})" ]${3}
 snippet plural
-	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}
+	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}${4}
+snippet verb
+	${1:what}Verb=${3:have}; [ \$$1 -eq 1 ] && $1Verb=${4:has}${2}${5}
+snippet plural-verb
+	${1:what}Plural=${3:s}; $1Verb=${4:have}; [ \$$1 -eq 1 ] && { $1Plural=; $1Verb=${5:has}; }${2}${6}
 # https://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 snippet xdg config home with initialization
 	readonly CONFIG_DIRSPEC=${XDG_CONFIG_HOME:-~/.config}/${1:`expand('%:t:r')`}
