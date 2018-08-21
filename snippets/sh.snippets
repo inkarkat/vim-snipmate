@@ -657,6 +657,11 @@ snippet epochToReldate
 	reldate --epoch "${1:$epoch}"${2}
 snippet dateToEpoch
 	date --date "${1:$date}" +%s${2}
+snippet expire
+	startEpoch=$(date +%s)
+	${1:# do something}
+	endEpoch=$(date +%s)
+	${2:if }[ $((endEpoch - startEpoch)) -ge ${3:$EXPIRY_TIME_SECONDS} ]${4:; then}${5}
 snippet array-unique
 	${1:list}=(\$(tr ' ' '\n' <<< "\${$1[@]}" | sort -u | tr '\n' ' '))${2}
 snippet array-sorted
