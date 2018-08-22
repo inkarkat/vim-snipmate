@@ -657,11 +657,17 @@ snippet epochToReldate
 	reldate --epoch "${1:$epoch}"${2}
 snippet dateToEpoch
 	date --date "${1:$date}" +%s${2}
-snippet expire
+snippet expire coarse (seconds)
 	startEpoch=$(date +%s)
 	${1:# do something}
 	endEpoch=$(date +%s)
 	${2:if }[ $((endEpoch - startEpoch)) -ge ${3:$EXPIRY_TIME_SECONDS} ]${4:; then}${5}
+snippet expire fine (milliseconds)
+	IFS=' ' read startEpoch startNanos <<<"$(date +%s\ %N)"
+	${1:# do something}
+	IFS=' ' read endEpoch endNanos <<<"$(date +%s\ %N)"
+	startMillis=10#${startNanos:0:3}; endMillis=10#${endNanos:0:3}; diffMillis=$(((endEpoch - startEpoch) * 1000))
+	${2:if }[ $((endMillis + diffMillis - startMillis)) -ge ${3:$EXPIRY_TIME_MILLISECONDS} ]${4:; then}${5}
 snippet array-unique
 	${1:list}=(\$(tr ' ' '\n' <<< "\${$1[@]}" | sort -u | tr '\n' ' '))${2}
 snippet array-sorted
