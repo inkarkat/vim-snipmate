@@ -475,11 +475,15 @@ snippet cleanup with function
 		${1:cleanup-command} 2>/dev/null
 	}
 	[ "$DEBUG" ] || trap 'cleanup' EXIT
-snippet cleanup any spawned subshell processes
-	trap "kill -- -$$" EXIT  # Kill subshell processes when the script exits.
 snippet cleanup remaining jobs
 	trap "jobs -p | xargs kill --" EXIT  # Kill remaining jobs when the script exits.
-snippet cleanup all processes withing the same process group
+snippet cleanup any spawned subshell processes, relaunching current script as new process group leader if necessary
+	pgid=$(ps -o pgid= "$$" | grep -o '[0-9]\+')
+	[ $$ -eq $pgid ] || exec setsid "${BASH_SOURCE[0]}" "$@" # Use setsid instead of set -m (...) to avoid having another subshell in between.
+	trap "kill -- -$pgid" EXIT  # Kill subshell processes when the script exits.
+snippet cleanup any spawned subshell processes, assuming direct start from interactive shell
+	trap "kill -- -$$ 2>/dev/null" EXIT  # When directly launched from an interactive shell, the process becomes the process group leader, its PGID copied from its PID. Kill subshell processes when the script exits. Attention! Will leave subshell processes behind if invoked from another script.
+snippet cleanup all processes within the same process group
 	trap "kill 0" EXIT  # Kill processes from the same process group (includes invoking scripts!) when the script exits.
 snippet finally
 	finally()
