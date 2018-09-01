@@ -478,7 +478,7 @@ snippet cleanup with function
 snippet cleanup remaining jobs
 	trap "jobs -p | xargs kill --" EXIT  # Kill remaining jobs when the script exits.
 snippet cleanup any spawned subshell processes, relaunching current script as new process group leader if necessary
-	pgid=$(ps -o pgid= "$$" | grep -o '[0-9]\+')
+	pgid=$(($(ps -o pgid= -p "$$")))
 	[ $$ -eq $pgid ] || exec setsid "${BASH_SOURCE[0]}" "$@" # Use setsid instead of set -m (...) to avoid having another subshell in between.
 	trap "kill -- -$pgid" EXIT  # Kill subshell processes when the script exits.
 snippet cleanup any spawned subshell processes, assuming direct start from interactive shell
