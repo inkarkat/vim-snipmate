@@ -769,8 +769,15 @@ snippet query
 	read -e -r -p "${2:Prompt} " ${1:var}${3}
 snippet query into array
 	read -e -r -p "${2:Prompt} " -a ${1:var}${3}
-snippet toterm
+snippet toterm?
 	[ -t 1 ]
+snippet toterm
+	# Force printing directly to terminal, even if stdout is redirected.
+	tty --quiet && exec >/dev/tty${1: || exit}${2}
+snippet fromterm
+	# Force reading directly from terminal / null device if stdin is redirected,
+	# to avoid consuming input.
+	exec 0</dev/tty${1: || exec </dev/null}${2}
 snippet alias enable subcommands
 	# Allow definition of ${2:$1} aliases putting an executable / alias "$1-foo"
 	# somewhere in the PATH.
@@ -791,8 +798,10 @@ snippet file-older
 	[ "$(find "${1:\$filespec}" -mmin +${2:minutes})" ]${3}
 snippet file-newer
 	[ "$(find "${1:\$filespec}" -mmin -${2:minutes})" ]${3}
-snippet plural
+snippet plural scalar
 	${1:what}Plural=${3:s}; [ \$$1 -eq 1 ] && $1Plural=${2}${4}
+snippet plural array
+	${1:what}Plural=${3:s}; [ \${#$1[@]} -eq 1 ] && $1Plural=${2}${4}
 snippet verb
 	${1:what}Verb=${3:have}; [ \$$1 -eq 1 ] && $1Verb=${4:has}${2}${5}
 snippet plural-verb
