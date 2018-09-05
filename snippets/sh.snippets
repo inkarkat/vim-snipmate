@@ -777,7 +777,7 @@ snippet toterm
 snippet fromterm
 	# Force reading directly from terminal / null device if stdin is redirected,
 	# to avoid consuming input.
-	exec 0</dev/tty${1: || exec </dev/null}${2}
+	{ exec 0</dev/tty; } 2>/dev/null${1: || exec </dev/null}${2}
 snippet alias enable subcommands
 	# Allow definition of ${2:$1} aliases putting an executable / alias "$1-foo"
 	# somewhere in the PATH.
