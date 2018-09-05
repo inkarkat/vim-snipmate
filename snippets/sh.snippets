@@ -773,7 +773,7 @@ snippet toterm?
 	[ -t 1 ]
 snippet toterm
 	# Force printing directly to terminal, even if stdout is redirected.
-	tty --quiet && exec >/dev/tty${1: || exit}${2}
+	{ exec >/dev/tty; } 2>/dev/null${1: || exit}${2}
 snippet fromterm
 	# Force reading directly from terminal / null device if stdin is redirected,
 	# to avoid consuming input.
