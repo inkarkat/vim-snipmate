@@ -342,7 +342,7 @@ snippet repeat dependency
 	- repeat.vim (vimscript #2136) autoload script (optional)
 	- visualrepeat.vim (vimscript #3848) autoload script (optional)
 snippet funcref-loading
-	if v:version < 702 | runtime autoload/${1:`expand('%:t:r')`}.vim | endif  " The Funcref doesn't trigger the autoload in older Vim versions.
+	if v:version < 702 | runtime autoload/${1:`expand('%:t:r')`}${2}.vim | endif  " The Funcref doesn't trigger the autoload in older Vim versions.${3}
 snippet read-range
 	(<line2> == 1 ? <line1> : <line2>)
 snippet patch exact version
