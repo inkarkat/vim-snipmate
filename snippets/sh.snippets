@@ -7,6 +7,10 @@ snippet #!source
 	${2}
 snippet @@
 	"${${1:array}[@]}"${2}
+snippet @empty
+	[ ${#${1:array}[@]} -eq 0 ]${2}
+snippet @nonempty
+	[ ${#${1:array}[@]} -gt 0 ]${2}
 snippet rev
 	`getline('.') =~# '^\s*#\s*$' ? (getline('.') =~# '#\s\+$' ? '' : ' ') : '# '`Version: "@(#) $Revision$"
 snippet if
