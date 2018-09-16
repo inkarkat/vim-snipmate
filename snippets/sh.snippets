@@ -764,9 +764,10 @@ snippet keep-status
 snippet status-union
 	status=0
 	${1:loop}
+	do
 		${2:command} || status=$?
-	${3:endloop}
-	exit $status
+	done
+	exit $status${3}
 snippet defined
 	[ -n "\${${1:variable}+t}" ]${2}
 snippet defined-and-empty
