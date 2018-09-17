@@ -417,6 +417,21 @@ snippet cla-skip
 			*)				    break;;
 		esac
 	done${4}
+snippet cla-color find in arguments
+	if [ ! -t 1 ] && ! contains '--color=always' "$@" || contains '--no-color' "$@" || contains '--color=never' "$@"; then
+		${1:# Turn off color.}
+	fi${2}
+snippet cla-color find in array
+	if [ ! -t 1 ] && ! contains '--color=always' "${${1:array}[@]}" || contains '--no-color' "${1[@]}" || contains '--color=never' "${1[@]}"; then
+		${2:# Turn off color.}
+	fi${3}
+snippet cla-color parse
+	colorArg=
+	--color=*|--no-color)		colorArg=\$1; shift;;
+	${1}
+	if [ ! -t 1 ] && [ "$colorArg" != '--color=always' ] || [ "$colorArg" = '--no-color' ] || [ "$colorArg" = '--color=never' ]; then
+		${2:# Turn off color.}
+	fi${3}
 snippet scriptDir Bash
 	readonly scriptDir=$([ "${BASH_SOURCE[0]}" ] && dirname -- "${BASH_SOURCE[0]}" || exit 3)
 	[ -d "$scriptDir" ] || { echo >&2 "ERROR: Cannot determine script directory!"; exit 3; }
