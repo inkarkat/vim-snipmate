@@ -750,18 +750,20 @@ snippet less
 	less --RAW-CONTROL-CHARS
 snippet pager
 	"${PAGER:-less}" --RAW-CONTROL-CHARS
-snippet pager-conditional
-	typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS)
+snippet pager unless output redirected
+	typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS); [ -t 1 ] || pager=()
+snippet pager conditional
+	typeset -a pager=("${PAGER:-less}" --RAW-CONTROL-CHARS)${1:; [ -t 1 ] || pager=()}
 	while [ $# -ne 0 ]
 	do
-		case "$1" in
+		case "\$1" in
 		--help|-h|-\?)	shift; printUsage "\$0"; exit 0;;
 		--no-pager)	shift; pager=();;
 		--)		shift; break;;
 		esac
 	done
-	${1:some condition && }pager=()
-	${2:more commands | }eval '${3:lastPipeCommand}' "${pager:+|}" '"${pager[@]}"'${4}
+	${2:some condition && }pager=()
+	${3:more commands | }eval '${4:lastPipeCommand}' "${pager:+|}" '"${pager[@]}"'${5}
 snippet pipe-conditional single pipeline with individual arguments
 	typeset -a ${1:conditionPipeline}=()
 	typeset -a $1=(${2:conditional pipe commands})
