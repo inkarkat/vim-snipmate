@@ -856,5 +856,8 @@ snippet xdg cache home with initialization
 	[ -d "$CACHE_DIRSPEC" ] || mkdir -p -- "$CACHE_DIRSPEC" || { printf >&2 'ERROR: Could not initialize cache store at %s!\n' "$CACHE_DIRSPEC"; exit 3; }${2}
 snippet xdg user specific non-essential data files
 	${XDG_CACHE_HOME:-~/.cache}
+snippet xdg runtime home with initialization
+	readonly RUNTIME_DIRSPEC=${XDG_RUNTIME_DIR:?}/${1:`expand('%:t:r')`}
+	[ -d "$RUNTIME_DIRSPEC" ] || mkdir -p -- "$RUNTIME_DIRSPEC" || { printf >&2 'ERROR: Could not initialize runtime store at %s!\n' "$RUNTIME_DIRSPEC"; exit 3; }${2}
 snippet xdg base directory relative to which user-specific non-essential runtime files and other file objects (such as sockets, named pipes, ...) should be stored. The directory MUST be owned by the user, and he MUST be the only one having read and write access to it
-	${XDG_RUNTIME_DIR}
+	${XDG_RUNTIME_DIR:?}
