@@ -861,3 +861,5 @@ snippet xdg runtime home with initialization
 	[ -d "$RUNTIME_DIRSPEC" ] || mkdir -p -- "$RUNTIME_DIRSPEC" || { printf >&2 'ERROR: Could not initialize runtime store at %s!\n' "$RUNTIME_DIRSPEC"; exit 3; }${2}
 snippet xdg base directory relative to which user-specific non-essential runtime files and other file objects (such as sockets, named pipes, ...) should be stored. The directory MUST be owned by the user, and he MUST be the only one having read and write access to it
 	${XDG_RUNTIME_DIR:?}
+snippet read single value from file
+	${1:name}Filespec="${2:filespec}"; $1=; [ -r "$$1Filespec" ] && < "$$1Filespec" IFS=$' ' read -r $1${3}
