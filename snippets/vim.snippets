@@ -4,6 +4,12 @@ snippet vim8
 	- Requires Vim 8.0 or higher.
 snippet au
 	- ${1:`expand('%:t:r')`}.vim autoload script${2}
+snippet pl
+	- ${1:`expand('%:t:r')`}.vim plugin${2}
+snippet plo
+	- ${1:`expand('%:t:r')`}.vim plugin (optional${2})${3}
+snippet ingopl
+	- ingo-library.vim plugin
 snippet header
 	" File: ${1:`expand('%:t')`}
 	" Author: ${2:`g:snips_author`}
