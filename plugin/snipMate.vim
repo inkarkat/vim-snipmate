@@ -48,6 +48,14 @@ fun! s:Scope( scope )
 	return (empty(a:scope) ? '_empty' : a:scope)
 endfunction
 
+fun! s:HasMultiSnip(multisnip, name)
+	for ms in a:multisnip
+		if ms[0] ==# a:name
+			return 1
+		endif
+	endfor
+	return 0
+endf
 fun! MakeSnip(scope, trigger, content, ...)
 	let multisnip = a:0 && a:1 != ''
 	let scope = s:Scope(a:scope)
@@ -55,7 +63,10 @@ fun! MakeSnip(scope, trigger, content, ...)
 	if !has_key({var}, scope) | let {var}[scope] = {} | endif
 	if !has_key({var}[scope], a:trigger)
 		let {var}[scope][a:trigger] = multisnip ? [[a:1, a:content]] : a:content
-	elseif multisnip | let {var}[scope][a:trigger] += [[a:1, a:content]]
+	elseif multisnip
+		if ! s:HasMultiSnip({var}[scope][a:trigger], a:1)
+			let {var}[scope][a:trigger] += [[a:1, a:content]]
+		endif
 	else
 		echom 'Warning in snipMate.vim: Snippet '.a:trigger.' is already defined.'
 				\ .' See :h multi_snip for help on snippets with multiple matches.'
